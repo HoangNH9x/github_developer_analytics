@@ -1,0 +1,16 @@
+﻿activity_type,group,records,unique_authors,repositories
+Commits,International,4979,56,14
+Commits,No Author Login,485,0,11
+Commits,Non-user account,333,10,12
+Commits,Unprofiled,2681,1232,25
+Commits,Unresolved location,13168,209,26
+Issues,International,6333,540,489
+Issues,Non-user account,897,15,95
+Issues,Unprofiled,98192,74427,912
+Issues,Unresolved location,14093,2300,832
+Issues,Vietnam,107,38,46
+Pull Requests,International,27083,781,714
+Pull Requests,Non-user account,18415,55,424
+Pull Requests,Unprofiled,109070,59620,936
+Pull Requests,Unresolved location,67865,2398,902
+Pull Requests,Vietnam,443,60,68

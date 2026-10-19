@@ -1,0 +1,6 @@
+﻿table,file,rows,unique_keys,missing_key_rows,duplicate_key_rows,repositories_covered,date_valid_rows,date_missing_or_invalid,date_before_range,date_in_range,date_after_range,status
+Repositories,E:\Hoc Python\github_developer_analytics\data\raw\repositories_stage2.csv,952,952,0,0,,952.0,0.0,0.0,952.0,0.0,KEYS_OK
+Commits,E:\Hoc Python\github_developer_analytics\data\raw\commits_stage2.csv,21646,21646,0,0,26.0,21646.0,0.0,0.0,21646.0,0.0,KEYS_OK
+Issues,E:\Hoc Python\github_developer_analytics\data\raw\issues_stage2.csv,119622,119622,0,0,914.0,119622.0,0.0,0.0,119622.0,0.0,KEYS_OK
+Pull Requests,E:\Hoc Python\github_developer_analytics\data\raw\pull_requests_stage2.csv,222876,222876,0,0,938.0,222876.0,0.0,0.0,222876.0,0.0,KEYS_OK
+Developers,E:\Hoc Python\github_developer_analytics\data\processed\developers_stage2_master.csv,3064,3064,0,0,,,,,,,KEYS_OK

@@ -1,0 +1,218 @@
+﻿activity_type,month,group,records,unique_authors
+Commits,2026-01,International,10,2
+Commits,2026-02,International,44,3
+Commits,2026-03,International,16,4
+Commits,2026-04,International,8,1
+Commits,2026-05,International,23,2
+Commits,2026-06,International,40,3
+Commits,2026-07,International,6,2
+Commits,2026-08,International,32,3
+Commits,2026-09,International,858,22
+Commits,2026-10,International,3942,45
+Issues,2020-08,International,3,1
+Issues,2020-09,International,4,1
+Issues,2020-10,International,2,2
+Issues,2020-11,International,1,1
+Issues,2020-12,International,1,1
+Issues,2021-01,International,2,2
+Issues,2021-02,International,5,3
+Issues,2021-03,International,5,1
+Issues,2021-04,International,3,1
+Issues,2021-05,International,2,2
+Issues,2021-06,International,1,1
+Issues,2021-07,International,2,2
+Issues,2021-08,International,1,1
+Issues,2021-10,International,1,1
+Issues,2021-11,International,1,1
+Issues,2021-12,International,1,1
+Issues,2022-01,International,2,2
+Issues,2022-02,International,2,2
+Issues,2022-05,Vietnam,1,1
+Issues,2022-06,International,1,1
+Issues,2022-07,International,4,4
+Issues,2022-08,International,1,1
+Issues,2022-09,International,1,1
+Issues,2022-10,International,2,1
+Issues,2022-11,International,1,1
+Issues,2022-12,International,2,2
+Issues,2023-01,International,4,4
+Issues,2023-01,Vietnam,1,1
+Issues,2023-02,International,2,2
+Issues,2023-03,International,5,4
+Issues,2023-04,International,3,3
+Issues,2023-05,International,7,5
+Issues,2023-06,International,30,5
+Issues,2023-06,Vietnam,1,1
+Issues,2023-07,International,9,6
+Issues,2023-08,International,2,2
+Issues,2023-08,Vietnam,1,1
+Issues,2023-09,International,3,3
+Issues,2023-09,Vietnam,1,1
+Issues,2023-10,International,1,1
+Issues,2023-11,International,2,2
+Issues,2023-11,Vietnam,1,1
+Issues,2023-12,International,2,2
+Issues,2024-01,International,3,3
+Issues,2024-02,International,2,1
+Issues,2024-03,International,10,5
+Issues,2024-04,International,18,9
+Issues,2024-05,International,13,7
+Issues,2024-05,Vietnam,1,1
+Issues,2024-06,International,16,4
+Issues,2024-07,International,1,1
+Issues,2024-07,Vietnam,1,1
+Issues,2024-08,International,6,6
+Issues,2024-09,International,10,4
+Issues,2024-09,Vietnam,1,1
+Issues,2024-10,International,2,2
+Issues,2024-10,Vietnam,3,2
+Issues,2024-11,International,6,6
+Issues,2024-11,Vietnam,1,1
+Issues,2024-12,International,3,3
+Issues,2025-01,International,9,9
+Issues,2025-02,International,21,12
+Issues,2025-03,International,22,10
+Issues,2025-03,Vietnam,1,1
+Issues,2025-04,International,25,14
+Issues,2025-05,International,45,16
+Issues,2025-05,Vietnam,1,1
+Issues,2025-06,International,19,12
+Issues,2025-07,International,16,12
+Issues,2025-07,Vietnam,1,1
+Issues,2025-08,International,8,8
+Issues,2025-09,International,43,18
+Issues,2025-09,Vietnam,2,2
+Issues,2025-10,International,34,17
+Issues,2025-11,International,49,14
+Issues,2025-12,International,42,13
+Issues,2025-12,Vietnam,1,1
+Issues,2026-01,International,52,23
+Issues,2026-01,Vietnam,3,2
+Issues,2026-02,International,22,16
+Issues,2026-02,Vietnam,2,1
+Issues,2026-03,International,33,23
+Issues,2026-03,Vietnam,3,2
+Issues,2026-04,International,81,29
+Issues,2026-04,Vietnam,3,3
+Issues,2026-05,International,52,23
+Issues,2026-05,Vietnam,3,2
+Issues,2026-06,International,25,18
+Issues,2026-06,Vietnam,1,1
+Issues,2026-07,International,117,30
+Issues,2026-07,Vietnam,18,4
+Issues,2026-08,International,1702,89
+Issues,2026-08,Vietnam,1,1
+Issues,2026-09,International,1780,140
+Issues,2026-09,Vietnam,19,6
+Issues,2026-10,International,1925,207
+Issues,2026-10,Vietnam,35,7
+Pull Requests,2020-07,International,39,1
+Pull Requests,2020-08,International,30,4
+Pull Requests,2020-09,International,12,2
+Pull Requests,2020-10,International,11,1
+Pull Requests,2020-11,International,9,3
+Pull Requests,2020-12,International,5,2
+Pull Requests,2021-01,International,3,1
+Pull Requests,2021-02,International,18,5
+Pull Requests,2021-03,International,22,3
+Pull Requests,2021-04,International,7,3
+Pull Requests,2021-05,International,13,5
+Pull Requests,2021-06,International,8,2
+Pull Requests,2021-07,International,40,6
+Pull Requests,2021-08,International,9,6
+Pull Requests,2021-09,International,15,6
+Pull Requests,2021-10,International,15,7
+Pull Requests,2021-11,International,6,4
+Pull Requests,2021-12,International,16,4
+Pull Requests,2022-01,International,17,2
+Pull Requests,2022-02,International,5,3
+Pull Requests,2022-03,International,16,5
+Pull Requests,2022-04,International,15,8
+Pull Requests,2022-05,International,32,9
+Pull Requests,2022-05,Vietnam,2,2
+Pull Requests,2022-06,International,28,5
+Pull Requests,2022-07,International,24,11
+Pull Requests,2022-07,Vietnam,1,1
+Pull Requests,2022-08,International,18,8
+Pull Requests,2022-08,Vietnam,1,1
+Pull Requests,2022-09,International,13,9
+Pull Requests,2022-10,International,16,8
+Pull Requests,2022-11,International,22,8
+Pull Requests,2022-12,International,20,10
+Pull Requests,2022-12,Vietnam,1,1
+Pull Requests,2023-01,International,36,11
+Pull Requests,2023-02,International,96,16
+Pull Requests,2023-03,International,124,21
+Pull Requests,2023-03,Vietnam,1,1
+Pull Requests,2023-04,International,48,17
+Pull Requests,2023-04,Vietnam,3,2
+Pull Requests,2023-05,International,103,24
+Pull Requests,2023-06,International,89,18
+Pull Requests,2023-06,Vietnam,1,1
+Pull Requests,2023-07,International,77,16
+Pull Requests,2023-07,Vietnam,1,1
+Pull Requests,2023-08,International,102,20
+Pull Requests,2023-09,International,56,14
+Pull Requests,2023-10,International,73,18
+Pull Requests,2023-11,International,70,20
+Pull Requests,2023-12,International,65,13
+Pull Requests,2024-01,International,132,18
+Pull Requests,2024-02,International,71,15
+Pull Requests,2024-03,International,191,23
+Pull Requests,2024-04,International,154,27
+Pull Requests,2024-04,Vietnam,2,2
+Pull Requests,2024-05,International,166,19
+Pull Requests,2024-05,Vietnam,4,1
+Pull Requests,2024-06,International,163,31
+Pull Requests,2024-07,International,102,26
+Pull Requests,2024-07,Vietnam,2,1
+Pull Requests,2024-08,International,93,25
+Pull Requests,2024-08,Vietnam,17,2
+Pull Requests,2024-09,International,183,30
+Pull Requests,2024-09,Vietnam,17,4
+Pull Requests,2024-10,International,107,24
+Pull Requests,2024-10,Vietnam,11,2
+Pull Requests,2024-11,International,114,27
+Pull Requests,2024-11,Vietnam,13,3
+Pull Requests,2024-12,International,152,29
+Pull Requests,2024-12,Vietnam,11,1
+Pull Requests,2025-01,International,178,33
+Pull Requests,2025-01,Vietnam,13,4
+Pull Requests,2025-02,International,119,35
+Pull Requests,2025-02,Vietnam,7,4
+Pull Requests,2025-03,International,254,41
+Pull Requests,2025-03,Vietnam,3,2
+Pull Requests,2025-04,International,171,38
+Pull Requests,2025-04,Vietnam,6,3
+Pull Requests,2025-05,International,286,45
+Pull Requests,2025-05,Vietnam,11,3
+Pull Requests,2025-06,International,181,39
+Pull Requests,2025-06,Vietnam,1,1
+Pull Requests,2025-07,International,129,30
+Pull Requests,2025-07,Vietnam,3,3
+Pull Requests,2025-08,International,148,34
+Pull Requests,2025-09,International,246,37
+Pull Requests,2025-09,Vietnam,3,2
+Pull Requests,2025-10,International,259,46
+Pull Requests,2025-11,International,244,47
+Pull Requests,2025-12,International,267,53
+Pull Requests,2026-01,International,252,59
+Pull Requests,2026-01,Vietnam,18,5
+Pull Requests,2026-02,International,369,60
+Pull Requests,2026-02,Vietnam,8,3
+Pull Requests,2026-03,International,510,75
+Pull Requests,2026-03,Vietnam,15,5
+Pull Requests,2026-04,International,753,87
+Pull Requests,2026-04,Vietnam,1,1
+Pull Requests,2026-05,International,635,81
+Pull Requests,2026-05,Vietnam,1,1
+Pull Requests,2026-06,International,744,95
+Pull Requests,2026-06,Vietnam,33,3
+Pull Requests,2026-07,International,1273,137
+Pull Requests,2026-07,Vietnam,28,4
+Pull Requests,2026-08,International,2189,192
+Pull Requests,2026-08,Vietnam,40,10
+Pull Requests,2026-09,International,4778,313
+Pull Requests,2026-09,Vietnam,102,14
+Pull Requests,2026-10,International,10027,400
+Pull Requests,2026-10,Vietnam,62,11

@@ -1,0 +1,4 @@
+﻿table,total_rows,unique_author_logins,rows_with_recognized_country,rows_vietnam,rows_unknown_or_unprofiled,country_coverage_pct
+Commits,21646,1507,4979,0,16667,23.0
+Issues,119622,77320,6440,107,113182,5.38
+Pull Requests,222876,62914,27526,443,195350,12.35

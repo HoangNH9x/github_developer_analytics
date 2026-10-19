@@ -1,0 +1,4 @@
+﻿table,total_rows,unique_repositories_in_file,repositories_covered_from_seed,repositories_with_zero_records,records_with_unknown_repository,missing_key_rows,duplicate_key_rows,date_invalid_or_missing,date_before_range,date_in_range,date_after_range,oldest_date,newest_date,status
+Commits,21646,26,26,926,0,0,0,0,0,21646,0,2024-05-30 14:59:22+00:00,2026-10-14 04:50:26+00:00,AUDITED
+Issues,119622,914,914,38,0,0,0,0,0,119622,0,2020-04-14 03:13:20+00:00,2026-10-18 13:20:25+00:00,AUDITED
+Pull Requests,222876,938,938,14,0,0,0,0,0,222876,0,2020-02-28 21:36:41+00:00,2026-10-18 13:08:37+00:00,AUDITED

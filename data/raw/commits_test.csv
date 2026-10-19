@@ -1,0 +1,1228 @@
+﻿repository,sha,author_login,author_name,author_date,committer_date,message,html_url
+openclaw/openclaw,5d3d1bffdf98f062fa477309ee7ee409a06be1e1,roboclaw-bot,roboclaw-bot,2026-10-14T04:46:18Z,2026-10-14T04:51:26Z,"test(gateway): isolate scheduler retirement from stack formatter retention
+
+Keep the native lazy-stack retention assertion independent of temporary Vite callsite handles. Restore the original formatter descriptor before collecting, preserving zero-retention assertions for root and scoped signals.
+
+Co-authored-by: vincentkoc <25068+vincentkoc@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/5d3d1bffdf98f062fa477309ee7ee409a06be1e1
+openclaw/openclaw,0e4fd49516769eca72139b780e21389007dcdd4f,roboclaw-bot,RoboClaw,2026-10-14T04:50:26Z,2026-10-14T04:50:26Z,"feat: move sessions between local and cloud from session menus (#171690)
+
+* feat(ui): move sessions between local and cloud from session menus
+
+Preserve exact durable move intent for reconnect-aware retries and share placement actions across session menus.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix(ui): wait for workspace settlement before moving sessions
+
+Keep ordinary Move unavailable while completed worker files reconcile, without blocking explicit offline-device abandonment.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* feat: move sessions between local and cloud from session menus
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: c4a0efba-5831-4583-affe-1d868d19b035
+
+* test: use canonical settled placement fixture
+
+Remove the optional true-only reconciliation marker once settlement completes instead of assigning an invalid false value.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/0e4fd49516769eca72139b780e21389007dcdd4f
+openclaw/openclaw,06081b71dd9f6fccf0c6294b88c1da6cbe9a3c4c,vincentkoc,Vincent Koc,2026-10-14T04:48:36Z,2026-10-14T04:48:36Z,fix(anthropic): correct Sonnet 5.5 cache-read cost (#171723),https://github.com/openclaw/openclaw/commit/06081b71dd9f6fccf0c6294b88c1da6cbe9a3c4c
+openclaw/openclaw,bdba1bff27dc32eb994daab27d9005685c9a3fc0,steipete,Peter Steinberger,2026-10-14T04:47:58Z,2026-10-14T04:47:58Z,"fix(doctor): bound media scans and isolate lost maintenance leases (#171655)
+
+* fix(doctor): bound media scans and isolate lost maintenance leases
+
+* test(doctor): preserve native SQLite hook types",https://github.com/openclaw/openclaw/commit/bdba1bff27dc32eb994daab27d9005685c9a3fc0
+openclaw/openclaw,d0760df1305f46d661e8f2a040892d34bed76b6d,krell11,Kirill Bobin,2026-10-14T04:47:29Z,2026-10-14T04:47:29Z,"fix(vllm): recognize served reasoning model aliases (#122022)
+
+Recognize served DeepSeek V4 and modern Nemotron Nano, Super, and Ultra aliases at the shared self-hosted discovery owner, and allow underscore-prefixed aliases through the existing vLLM thinking matcher. Preserve explicit reasoning:false and legacy non-reasoning Nemotron chat models.
+
+Keep the existing DeepSeek per-call payload owner from #150149 and remove the superseded branch implementation. Thanks @krell11 for the original diagnosis and alias repair. Related: #121597.
+
+Validation: 51 focused vLLM, shared discovery, and SGLang tests; clean independent review; exact-head CI https://github.com/openclaw/openclaw/actions/runs/38509106053. The shipped CLI path through a loopback proxy to Ollama Qwen3:8b confirms thinking-off template flags reach the server. Native Nemotron/DeepSeek inference remains untested.
+
+Co-authored-by: krell11 <11bobin.kiryusha@gmail.com>
+Co-authored-by: Peter Steinberger <steipete@gmail.com>",https://github.com/openclaw/openclaw/commit/d0760df1305f46d661e8f2a040892d34bed76b6d
+openclaw/openclaw,2e511649242bc2fa256b4db9563fa5841ff41f87,MagMueller,Magnus Müller,2026-10-14T04:47:07Z,2026-10-14T04:47:07Z,"docs: add Browser Use as a direct CDP provider (#124188)
+
+Document Browser Use through the existing direct CDP profile contract. Keep the current configuration shape, use minutes for timeout (maximum 240), and avoid an unsupported session-lifecycle guarantee.
+
+Preserves the original contribution in https://github.com/openclaw/openclaw/pull/124188.
+
+Co-authored-by: MagMueller <mamagnus00@gmail.com>",https://github.com/openclaw/openclaw/commit/2e511649242bc2fa256b4db9563fa5841ff41f87
+openclaw/openclaw,fb8a1e75b70ada2fa4d832ce940781f37ebd2522,steipete,Peter Steinberger,2026-10-14T04:45:09Z,2026-10-14T04:45:09Z,"feat(crabbox): protect cloud setup secrets through egress (#171073)
+
+Cloud setup used to forward host environment values through plaintext `setupEnv`, which disabled automatic snapshots and prepared workers. `settings.setupSecrets` replaces it: up to 16 POSIX environment names mapped to protected shared-store SecretRefs. One job-scoped egress owner gives profile setup, recipe preparation and postCreate/postStart commands only sentinels plus public CA trust; Crabbox native egress keeps the authenticated upstream proxy on the Gateway host, allows public HTTPS package downloads, and substitutes each secret only for its store-bound destinations. Grants revoke before process termination on cancellation.
+
+Devcontainer `secrets` requests resolve only through the operator-approved map; unmapped requests fail once, before repository commands run. Setup secrets no longer disable snapshots or prepared workers; images captured with protected egress use a distinct compatibility identity, so older plaintext images are never adopted.
+
+Requirements: an owned coordinator Linux lease and Crabbox 0.77.0 or newer with its matching runtime helper. Unsupported targets, a missing helper or login, an unavailable proxy, missing bindings and old CLIs fail visibly; there is no plaintext or direct-egress fallback.
+
+Update behavior: the Crabbox plugin's Doctor health repair migrates each `setupEnv` profile atomically, and only when every same-name protected store entry already has destination bindings and there is no conflicting host value or mapping. It writes through Doctor's backed-up config writer, never writes store values, never invents destinations, and stays lazy when no profile needs migration. Unrepaired profiles report a remedy (`openclaw doctor --fix`) instead of forwarding plaintext. No SQLite schema change.
+
+Merged with main after #170929 (empty-workspace cloud sessions): empty workspaces still require project-preparation support, so they stay cold on setup-command-only providers.
+
+Related: #170810, #170862, #170929
+Refs: https://github.com/openclaw/openclaw/pull/171073",https://github.com/openclaw/openclaw/commit/fb8a1e75b70ada2fa4d832ce940781f37ebd2522
+openclaw/openclaw,a7d854785b91bb7ea0b77abe07a72ecaad4b8a12,steipete,Peter Steinberger,2026-10-14T04:44:29Z,2026-10-14T04:44:29Z,fix: release stream observation after early HTTP disconnect (#171713),https://github.com/openclaw/openclaw/commit/a7d854785b91bb7ea0b77abe07a72ecaad4b8a12
+openclaw/openclaw,778a1b75cacc0a7711fe689adf5b0ddde48d7eb0,steipete,Peter Steinberger,2026-10-14T04:43:23Z,2026-10-14T04:43:23Z,"perf(diagnostics): measure allocated bytes per RPC and turn (#171686)
+
+* perf(diagnostics): measure allocated bytes per RPC and turn
+
+* fix(perf): measure subscription snapshots through the owning RPC
+
+* fix(perf): keep default reload measurement within the RPC quota",https://github.com/openclaw/openclaw/commit/778a1b75cacc0a7711fe689adf5b0ddde48d7eb0
+openclaw/openclaw,dca28bccbbc7cb11cf7d3bc1ef19288a5068a49b,roboclaw-bot,RoboClaw,2026-10-14T04:42:14Z,2026-10-14T04:42:14Z,"fix: prevent PR landing stalls on empty check suites (#171720)
+
+Prove unrepresented suites from complete batched check-run evidence and a stable full suite inventory, retaining the 1,000-suite limit and final authority checks.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/dca28bccbbc7cb11cf7d3bc1ef19288a5068a49b
+openclaw/openclaw,97ca65d6d6624c6d2e36fd4f7f611df459a9b6c8,steipete,Peter Steinberger,2026-10-14T04:41:52Z,2026-10-14T04:41:52Z,"fix(gateway): keep wizard step authority through setup-inference probes (#171667)
+
+The hosted setup wizard's runner captured operator authority from the wizard.start request, whose hold is released when wizard.start responds, so later steps such as the macOS Companion setup-inference probe failed with 'Gateway caller authority is no longer active'. The wizard owner now refreshes its scope from the answering wizard.next request and retains that authority until the runner settles, including after progress replies. Revocation checks are unchanged. Fixes #168553.",https://github.com/openclaw/openclaw/commit/97ca65d6d6624c6d2e36fd4f7f611df459a9b6c8
+openclaw/openclaw,fb81cb7e64164278a7a9235e545c353320cf0561,steipete,Peter Steinberger,2026-10-14T04:41:27Z,2026-10-14T04:41:27Z,"fix(ci): run node-worker E2Es when their owners change (#171705)
+
+Node-worker owner changes now select 13 keyless process E2Es through an explicit path-to-test mapping. Hourly main retains the complete group in one serial row with a shared build, inside the existing matrix cap. No production code changes.
+
+Validation: aggressive planner selects all 13 files for node-launch-adapter changes and none for docs-only changes; hourly plans fit 77/77 hybrid and 76/77 hosted rows. Independent review is clean after enforcing serial execution in the manifest.
+
+CI: https://github.com/openclaw/openclaw/actions/runs/38510459970
+Related: #169484",https://github.com/openclaw/openclaw/commit/fb81cb7e64164278a7a9235e545c353320cf0561
+openclaw/openclaw,db0d3d00ce531d1685c8d37a4984107ccbe27227,Patrick-Erichsen,Patrick Erichsen,2026-10-14T04:41:21Z,2026-10-14T04:41:21Z,"feat: expose published ClawHub packages to Gateway (#171622)
+
+* Add verified ClawHub source and protocol contracts
+
+* fix(gateway): include Claw excerpts in detail contract
+
+* fix(claws): honor starter catalog result limits
+
+* test(claws): validate published detail against Gateway contract
+
+* fix(claws): type bounded starter requests
+
+* fix(claws): satisfy protocol and source CI guards
+
+* fix(claws): keep source exports below imports
+
+* fix: preserve source-layer install ownership and recovery guidance",https://github.com/openclaw/openclaw/commit/db0d3d00ce531d1685c8d37a4984107ccbe27227
+openclaw/openclaw,5139241a9afeb3678aae0e9e4bdad0bb8a91b26e,steipete,Peter Steinberger,2026-10-14T04:22:13Z,2026-10-14T04:39:34Z,"fix(channels): keep owner-only plugin types private
+
+Keep the Google Chat payload error and Matrix media-info union private after
+#171606 removed their final imports. Preserve parser errors and the exported
+MatrixMediaContent contract while clearing the unused-export check.",https://github.com/openclaw/openclaw/commit/5139241a9afeb3678aae0e9e4bdad0bb8a91b26e
+openclaw/openclaw,b551040a3f38cfbe2c271f49967876c57db8374a,steipete,Peter Steinberger,2026-10-14T04:22:05Z,2026-10-14T04:39:31Z,"fix(codex): keep inference cleanup private
+
+Keep inference thread cleanup inside its routing owner after #171656 removed
+the last cross-module caller. Preserve native teardown and binding cleanup
+while clearing the unused-export check.",https://github.com/openclaw/openclaw/commit/b551040a3f38cfbe2c271f49967876c57db8374a
+openclaw/openclaw,35ba90be5ab20a3d304ac239d72ff35aeebb6265,steipete,Peter Steinberger,2026-10-14T04:37:56Z,2026-10-14T04:37:56Z,"fix(pr): stream tooling-root refresh output so far-behind roots refresh (#171628)
+
+The tooling-root refresh ran `git fetch` and `git merge --ff-only`
+through the capturing Git helper (execFileSync, 1 MiB default buffer).
+A root ~4,200 commits behind fast-forwarded, then its diffstat overflowed
+the buffer (spawnSync git ENOBUFS), aborting before
+`pnpm install --frozen-lockfile`.
+
+Stream both mutating steps to stderr and skip the merge diffstat. The
+clean-main rechecks, single-refresh rule, and canonical-checkout refusal
+are unchanged. Regression: a post-merge hook emits 1.2 MB during the
+fast-forward; the old wrapper fails with the incident's ENOBUFS.",https://github.com/openclaw/openclaw/commit/35ba90be5ab20a3d304ac239d72ff35aeebb6265
+openclaw/openclaw,82cceceaeec0da672a1477be3729e209f1457e1c,steipete,Peter Steinberger,2026-10-14T04:37:44Z,2026-10-14T04:37:44Z,"perf(gateway): omit consumed paging metadata from worker replies (#171698)
+
+Prepare history cursors in the worker, then clear pagination and anchor facts before transferring the encoded response. Preserve plain-reader pages and active-leaf property presence on back-scroll.",https://github.com/openclaw/openclaw/commit/82cceceaeec0da672a1477be3729e209f1457e1c
+openclaw/openclaw,2e084ea7cb6232dfb893cf02b9b4ee2df10d1394,steipete,Peter Steinberger,2026-10-14T04:34:38Z,2026-10-14T04:34:38Z,fix(telegram): honor DNS family preference and retry connect timeouts (#171564),https://github.com/openclaw/openclaw/commit/2e084ea7cb6232dfb893cf02b9b4ee2df10d1394
+openclaw/openclaw,5c9d98d5a289f5d9832b3f0d500110f706300fa4,steipete,Peter Steinberger,2026-10-14T04:32:39Z,2026-10-14T04:32:39Z,"test(gateway): await startup admission retirement instead of one event-loop turn (#171694)
+
+The startup admission retirement test expected every admitted import to finish within a single setImmediate turn after close, which flaked when cold dynamic imports outlived that turn. It now awaits the real drain while the suspension stays held, so a regression that waited for the suspension would still hang and fail. Test-support only; production unchanged.
+
+Refs: https://github.com/openclaw/openclaw/pull/171694",https://github.com/openclaw/openclaw/commit/5c9d98d5a289f5d9832b3f0d500110f706300fa4
+openclaw/openclaw,a0b8fa311ada729074f901bd87995e64703a1d42,steipete,Peter Steinberger,2026-10-14T04:32:13Z,2026-10-14T04:32:13Z,perf(agents): reuse unchanged prompt-cache history fingerprints (#171696),https://github.com/openclaw/openclaw/commit/a0b8fa311ada729074f901bd87995e64703a1d42
+openclaw/openclaw,3b36ebb423350fa2e96bd88e1689df2581bef098,steipete,Peter Steinberger,2026-10-14T04:14:15Z,2026-10-14T04:31:20Z,"test(update): preserve worker clocks in progress fixtures
+
+Fake only wall-clock age and heartbeat intervals while real ledger completion receipts settle. Keep worker timeouts, immediates, and monotonic clocks native; retain all ledger assertions.",https://github.com/openclaw/openclaw/commit/3b36ebb423350fa2e96bd88e1689df2581bef098
+openclaw/openclaw,d4691409c3f6f3d3ae5f6c95c2900d7e9a9c86c6,steipete,Peter Steinberger,2026-10-14T04:29:49Z,2026-10-14T04:29:49Z,fix: retain cleanup results after exec settlement (#171708),https://github.com/openclaw/openclaw/commit/d4691409c3f6f3d3ae5f6c95c2900d7e9a9c86c6
+openclaw/openclaw,f1a45209d253a166a4fc3a153dffadfe4fda8ca5,steipete,Peter Steinberger,2026-10-14T04:29:38Z,2026-10-14T04:29:38Z,"test(qa-lab): repoint stale chat view scenario codeRef
+
+ui/src/pages/chat/chat-view.ts became chat-view.tsx in the Solid retained-pane refactor (#169835), leaving the control-ui-qa-channel-image-roundtrip codeRef dangling and failing the scenario catalog repo-backed refs test in Extension Tests shard 2.",https://github.com/openclaw/openclaw/commit/f1a45209d253a166a4fc3a153dffadfe4fda8ca5
+openclaw/openclaw,75e5ea65801789bd9c2c75a646467a3ffbdfc951,steipete,Peter Steinberger,2026-10-14T04:29:30Z,2026-10-14T04:29:30Z,"perf(worktrees): bound repository housekeeping across archive cleanup (#171680)
+
+* perf(worktrees): bound repository housekeeping across archive cleanup
+
+Frequent archive-triggered cleanup repeats repository Git maintenance between hourly sweeps. Retain one hourly deadline per repository in the existing service owner, while new repositories and explicit deferred repair run immediately. Keep orphan and snapshot cleanup independent.
+
+Synthetic Linux measurements with 128 worktrees and 6,900 packs: paced steady maintenance spawns drop from 24/min to zero; median cleanup drops from 57.2 ms to 10.4 ms. First maintenance preserves the same bounded consolidation. No schema or configuration change.
+
+* test(worktrees): advance pack cleanup clock between maintenance passes",https://github.com/openclaw/openclaw/commit/75e5ea65801789bd9c2c75a646467a3ffbdfc951
+openclaw/openclaw,dd1776f133199d14160ac0f0807650fecaf4440a,jjjhenriksen,Jacqueline Henriksen,2026-10-14T04:29:21Z,2026-10-14T04:29:21Z,"feat(openai): support typed Decisions API evaluations (#166320)
+
+Add OpenAI Platform Decisions support through the existing Decision provider contract for Boolean, choice, and score evaluations. Require API-key authentication; ChatGPT/Codex subscription OAuth does not authorize this endpoint.
+
+Verified with focused tests and real built-CLI calls through an isolated Gateway to OpenAI.
+
+Original implementation by @jjjhenriksen. Additional verification requested by @obviyus.
+
+## Work sessions
+
+- [Original discussion with @obviyus](https://team.openclaw.ai/chat/roboclaw)
+- [Implementation and verification](https://team.openclaw.ai/chat/roboclaw/dashboard/a2e03f26-7143-42d1-b0c0-0e8814d63cd2)
+
+Co-authored-by: obviyus <22031114+obviyus@users.noreply.github.com>
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+Co-authored-by: Kimiyu-186 <202845257+Kimiyu-186@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/dd1776f133199d14160ac0f0807650fecaf4440a
+openclaw/openclaw,eda41b03a1a0dc02abecc8351a3d4da25b05c367,steipete,Peter Steinberger,2026-10-14T04:01:52Z,2026-10-14T04:26:01Z,"fix(node-host): keep owner-only helpers private
+
+The device-folder session refactor co-located these consumers but left three unused exports. Keep their implementations and all effect-boundary checks unchanged while removing the obsolete external visibility.",https://github.com/openclaw/openclaw/commit/eda41b03a1a0dc02abecc8351a3d4da25b05c367
+openclaw/openclaw,d39b63ac9aa5f64ca8b1d2d8b4a40d6a2678fe8e,steipete,Peter Steinberger,2026-10-14T03:43:57Z,2026-10-14T04:25:59Z,fix(cli): keep completion flag helper private,https://github.com/openclaw/openclaw/commit/d39b63ac9aa5f64ca8b1d2d8b4a40d6a2678fe8e
+openclaw/openclaw,7924eeee7c72de7047fd8eb4514f1dcecc4c57f9,steipete,Peter Steinberger,2026-10-14T03:28:18Z,2026-10-14T04:25:58Z,"fix(ui): remove retired Web Awesome tab label helper
+
+The native tool-details tabs migration removed the last label-helper caller.
+Delete the unused module and register Web Awesome tabs directly in the remaining
+theme test, preserving its custom-element setup.
+
+Repairs the full-tree export finding left by #171552. The obsolete generated
+boot inventory entry remains with its integration owner.",https://github.com/openclaw/openclaw/commit/7924eeee7c72de7047fd8eb4514f1dcecc4c57f9
+openclaw/openclaw,dbe64e3a1fcb047e8b66f82829fe1dc64d177c9a,steipete,Peter Steinberger,2026-10-14T03:28:00Z,2026-10-14T04:25:58Z,"fix(qa-lab): keep command failure diagnostics private
+
+Keep the command failure getter internal to the Crabbox runtime. Exercise
+recovery candidate extraction, deduplication, and the candidate cap through
+session acquisition and its public description instead of a test-only export.
+Preserve abort cleanup ordering and private-output assertions.
+
+Repairs the production export finding introduced by #171482. Runtime diagnostics
+storage and lease recovery behavior remain unchanged.",https://github.com/openclaw/openclaw/commit/dbe64e3a1fcb047e8b66f82829fe1dc64d177c9a
+openclaw/openclaw,6a434711affa123a45d333b645ec56ba117c4e04,steipete,Peter Steinberger,2026-10-14T03:04:36Z,2026-10-14T04:25:57Z,"fix(ui): remove obsolete exports after Solid migration
+
+The scheduled dependency check still sees the old Lit render adapters after
+production callers migrated to Solid. Keep native components as the production
+owners, move rendering adapters used only by tests into test support, and remove
+unused exports without adding dead-code exceptions.
+
+Retain the chat pane lifecycle in a module shared by its production bridge and
+existing tests. Put per-host chat state lookup on the state owner and keep Lit
+cleanup and locale coverage on the remaining public boundaries.
+
+Proof: changed-file oxfmt and oxlint, git diff --check, and one isolated Codex
+review with no actionable P0-P2 findings. Hosted dependency proof is handled by
+the red-main landing lane. The MCP renderer belongs to the separate active
+primitive migration and is intentionally outside this repair.",https://github.com/openclaw/openclaw/commit/6a434711affa123a45d333b645ec56ba117c4e04
+openclaw/openclaw,670270edc060858b41a04589910002d4dcf97313,steipete,Peter Steinberger,2026-10-14T04:25:19Z,2026-10-14T04:25:19Z,"refactor(plugins): remove older-host fallback paths (#171633)
+
+Bundled plugins release with their matching host. Remove older-host capability fallbacks and Reef legacy stores; use current async state, thread-binding, and runtime APIs throughout bundled callers. Preserve released third-party SDK adapters and real security/effect checks.
+
+This removes 2,770 net lines without changing current-host warmed-turn SQL or the repository T1 count (224). Validation includes focused plugin tests, CI types/lint/architecture/ratchets, two review rounds, and the published-driver update cell.",https://github.com/openclaw/openclaw/commit/670270edc060858b41a04589910002d4dcf97313
+openclaw/openclaw,893ba827806596e7506b655f1ac0e70da1d46deb,steipete,Peter Steinberger,2026-10-14T04:24:07Z,2026-10-14T04:24:07Z,"perf(sessions): avoid chat imports in maintenance prewarm (#171697)
+
+Keep foreground history prewarm eager while maintenance admits its SQLite reader without retaining unused chat presentation modules. Preserve existing reader admission, worker lifetime, and cancellation behavior.",https://github.com/openclaw/openclaw/commit/893ba827806596e7506b655f1ac0e70da1d46deb
+openclaw/openclaw,c0852fbf868b83daab465eea006d336d19063cd7,JasonBuildAI,Jason Cat,2026-10-14T04:22:08Z,2026-10-14T04:22:08Z,"fix: tool call text no longer leaks into chat output when provider chunks split a call marker (#169172)
+
+* fix(tool-call-repair): keep call text private when chunks split a call marker
+
+A buffered tail that is still an unfinished call marker (""<funct"", ""<|channel|>"")
+was replayed as a false-positive prefix when a complete call preceded it, so the
+rest of the call arrived mid-buffer and was emitted as visible text. Hold the
+buffer while the tail can still complete into a call, replay only decided
+false-positive prefixes, and route trim bookkeeping through one helper so the
+done/error/EOF paths share the same chunk-independent decision.
+
+Regression tests cover a replayed false prefix, a stacked function call, and a
+stacked Harmony call split across chunks.
+
+Refs #169161
+
+* fix(tool-call-repair): align split-stream replay with the block origin
+
+The split-marker buffering added in the previous commit diverged from the
+unsplit stream when an authoritative text_end extended the same content block
+(""hello\n[read]\n{}\nX\n  "" lost the call placeholder). Classify
+delta-path buffers with the same finalize context as snapshots, keep the block
+offset when a text_end extends a buffered snapshot, and track per-content-index
+consumed input length so non-authoritative replays slice from the right origin.
+
+Adds three regression tests (plain text and Harmony, delta and text_end split
+shapes); stream-normalizer suite 58/58 and packages/tool-call-repair +
+normalization-core 445/445 pass, fuzz seed=1 20k iters failures 71 -> 56 and
+leakToSplit 18 -> 10 versus the previous commit.
+
+Refs #169161
+
+* chore(tool-call-repair): store the touched files with LF line endings
+
+The previous uploads kept a CRLF final newline captured from the local
+working copy; the repository stores these files as LF, so the PR diff
+picked up a spurious trailing-line change on both files. No code changes.
+
+Refs #169161
+
+* style(tool-call-repair): format the new test cases with oxfmt
+
+check-lint failed on the previous commit because the three added it.each
+rows exceeded the formatter width; run oxfmt's default formatting on the
+test file (source file already clean). No behavior change.
+
+Refs #169161
+
+* fix(tool-call-repair): keep trim replay order and drain buffered aux
+
+Replays each false-positive prefix segment with its own content block template and unit accounting instead of the latest template, and interleaves the replayed text with queued reasoning in arrival order. Every trim path (delta, done, error, queue overflow, EOF) now drains buffered auxiliary events before clearing the candidate queue. Adds regression tests for the three review repros.
+
+* test(tool-call-repair): cover terminal trim drains for done, error, and queue cap
+
+* fix(tool-call-repair): keep trimmed snapshot offsets local to their block
+
+A trim can drop earlier content blocks whole, so the retained suffix can
+start inside a later block. Advancing snapshotOffset by the concatenated
+buffer's removed length made authoritative text_end reconciliation slice
+at the wrong origin: the f865603 review repro ('[read]' then
+'x\n<function=read>' plus text_end) leaked 'ion=read></function>' as
+visible text.
+
+Derive the new origin from the original part that contains the retained
+suffix so replay slicing and cumulative snapshots agree, and add the
+cross-block cumulative-snapshot case to the block-index regression.
+
+* refactor(tool-call-repair): isolate bounded stream suppression
+
+Keep the stream coordinator below its inherited line budget by moving the existing oversized-payload state machine into a sibling module. Preserve the shared grammar and request tool allowlist, and strengthen marker-split regressions with independent visible-text expectations.
+
+* fix(pr-wrapper): list the extracted suppression module in the wrapper inventory
+
+6caf20c moved the bounded stream suppression state machine into packages/tool-call-repair/src/stream-normalizer-suppression.ts, but scripts/pr only extracts scripts/pr, scripts/pr-lib, and the paths listed in wrapper-components.txt. Without the entry the extracted anchor cannot resolve ./stream-normalizer-suppression.js, so eager-import-closure fails on the PR wrapper inventory and on the extracted dependency context.
+
+---------
+
+Co-authored-by: Peter Steinberger <steipete@gmail.com>",https://github.com/openclaw/openclaw/commit/c0852fbf868b83daab465eea006d336d19063cd7
+openclaw/openclaw,f465dcd3270d7013f95b8b8cbcf7af1de2eee433,roboclaw-bot,RoboClaw,2026-10-14T04:18:38Z,2026-10-14T04:18:38Z,"improve(ui): shrink the composer in existing sessions (#171637)
+
+* improve(ui): shrink the composer in existing sessions
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* improve(ui): shrink the composer in existing sessions
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: ac163428-af62-49bf-b875-0b2c66e13ae6
+
+* fix(ui): preserve landscape inline-menu composer space
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/f465dcd3270d7013f95b8b8cbcf7af1de2eee433
+openclaw/openclaw,5a1228582fde84e9be2ff7d51771f02979033ab3,steipete,Peter Steinberger,2026-10-14T04:17:32Z,2026-10-14T04:17:32Z,docs(agents): prefer doing less work on hot paths,https://github.com/openclaw/openclaw/commit/5a1228582fde84e9be2ff7d51771f02979033ab3
+openclaw/openclaw,a70ef63872aa2325077d70cb523c79c639fa6211,shakkernerd,Shakker,2026-10-14T04:16:58Z,2026-10-14T04:16:58Z,"fix: allow guest child startup after parent yields (#171668)
+
+Preserve accepted guest child startup after the parent yields while retaining source revocation and session-scoped authority.",https://github.com/openclaw/openclaw/commit/a70ef63872aa2325077d70cb523c79c639fa6211
+openclaw/openclaw,32db0a6447439f32584a70af1530ed00f56397c7,alkor2000,alkor2000,2026-10-14T04:15:33Z,2026-10-14T04:15:33Z,"feat(browser): expose wrapped observations to Code Mode (#164833)
+
+Expose the existing sanitized, bounded, untrusted-wrapped Browser observations in structured details so Code Mode can read snapshots and page text without enabling page evaluation. Preserve network provenance, dialog handling, and private screenshot delivery rules.
+
+Closes #164641
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/32db0a6447439f32584a70af1530ed00f56397c7
+openclaw/openclaw,64231a652639790a5b4f446ed2319e133a3f53f8,steipete,Peter Steinberger,2026-10-14T04:14:19Z,2026-10-14T04:14:19Z,"refactor(ui): simplify cloud environment presentation (#171684)
+
+Shares the snapshot status rule between repository summaries and snapshot rows, and shares unassigned-preparation eligibility between repository grouping and unlabeled builds. Removes duplicate label arguments, a redeclared action props type, naming-only accessors, an input-only form-control helper, singleton fragments and consecutive store updates. Net production change: -41 lines across four Control UI files. No user-visible behavior change.
+
+Related: #170892, #170895, #170875, #171176
+Refs: https://github.com/openclaw/openclaw/pull/171684",https://github.com/openclaw/openclaw/commit/64231a652639790a5b4f446ed2319e133a3f53f8
+openclaw/openclaw,2ba399ee10c481ff1d3c5ac603e66af37427aed0,roboclaw-bot,RoboClaw,2026-10-14T04:13:43Z,2026-10-14T04:13:43Z,"fix: keep sidebar status animations smooth during session updates (#171689)
+
+* fix: keep sidebar status animations smooth during session updates
+
+Retain the mounted status glyph and native animation across reactive session refreshes in chip and roster modes. Preserve queued/offscreen transitions and child unread badges.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix: keep sidebar status animations smooth during session updates
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: d7dfc051-97e6-48f2-be34-7684bfa964b6
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/2ba399ee10c481ff1d3c5ac603e66af37427aed0
+openclaw/openclaw,5f1ab1b0780bb3c7208ff669d52f0a1ba1bfff20,sxh313,sxh,2026-10-14T04:13:31Z,2026-10-14T04:13:31Z,"fix: tell the model what to call when Code Mode rejects module access (#158716)
+
+Closes #158675
+
+Co-authored-by: sxh313 <250161920+sxh313@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/5f1ab1b0780bb3c7208ff669d52f0a1ba1bfff20
+openclaw/openclaw,8c89f7886c803c987aafdcfecd6425fee9664540,steipete,Peter Steinberger,2026-10-14T04:11:57Z,2026-10-14T04:11:57Z,"perf(ui): load filtered sidebar rows before group metadata (#171671)
+
+Load filtered sidebar rows before group metadata within the existing connection bootstrap queue. Preserve concurrency and foreground readiness; rows can paint while group reconciliation remains pending.
+
+Five alternating Team cold loads were neutral (first populated sidebar 5.997 s to 5.989 s). Focused regression proof, clean independent review, UI performance budgets, browser E2E, typechecks and lint passed. The unrelated debug-overlay sampling file passed five runs on head and five on CI main base; land under the operator-authorized unrelated-failure exception without rerunning CI.
+
+Refs #171671.",https://github.com/openclaw/openclaw/commit/8c89f7886c803c987aafdcfecd6425fee9664540
+openclaw/openclaw,2d45e5ce94b91972c9f46167065f768df2dc2d14,obviyus,Ayaan Zaidi,2026-10-14T04:09:16Z,2026-10-14T04:09:16Z,"fix(skills): keep background reviews out of user reply hooks (#171651)
+
+## What Problem This Solves
+
+Detached Skill Workshop reviews inherit the foreground user trigger, so user-only reply hooks can mistake background maintenance for a new user turn.
+
+## User Impact
+
+Background learning no longer starts user-only reply hooks such as Advisor. Foreground user turns remain eligible; the review's model, tools, source snapshot, and permission checks are unchanged.
+
+## Why This Change Was Made
+
+The review is admitted as system work but reuses the foreground prompt context. Clear its inherited trigger at the producer so every hook sees the correct distinction, rather than adding session-key exclusions to individual plugins. The trigger taxonomy has no generic system-maintenance value, so this run leaves the optional trigger unset.
+
+## Evidence
+
+- Production experience-review regression proves a user-eligible claiming hook handles the foreground turn, then does not dispatch for the detached review through the real review forwarding and reply-hook dispatcher; review model work proceeds.
+- 33 focused tests passed: experience review (9), review scheduler (12), and reply-hook boundaries (12).
+- Scoped Oxfmt and Oxlint passed.
+- `node scripts/run-tsgo.mjs -p tsconfig.core.json` passed.
+- Madge import-cycle check: 0 cycles.
+- Documented that background reviews are internal system work, not user turns.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/2d45e5ce94b91972c9f46167065f768df2dc2d14
+openclaw/openclaw,664f65defd2980c42b7a194bbb2786aba9fd078d,zhangguiping-xydt,xingzhou,2026-10-14T04:06:18Z,2026-10-14T04:06:18Z,"fix(commands): session export truncates filenames containing spaces (#171616)
+
+fix(export): keep spaces in /export-session filenames
+
+`/export-session monthly report.html` wrote the export to a file named `monthly`, because the argument was split at the first space. The whole argument is now used as the filename. Workspace containment and the trajectory flag handling are unchanged.
+
+Proof: built Gateway, session created by a normal scripted-provider turn. Main wrote `monthly`; with this change it writes `monthly report.html`. A plain filename still works, a path outside the workspace is still rejected, and the trajectory flag still parses.
+
+Thanks @zhangguiping-xydt.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/664f65defd2980c42b7a194bbb2786aba9fd078d
+openclaw/openclaw,229125877639f29fea9ed44c4c4639c378b88089,steipete,Peter Steinberger,2026-10-14T04:04:23Z,2026-10-14T04:04:23Z,fix(ui): allow complete selected usage exports while other sessions refresh (#171679),https://github.com/openclaw/openclaw/commit/229125877639f29fea9ed44c4c4639c378b88089
+openclaw/openclaw,6f664ff69807e77282b6f365727e080416e62caf,roboclaw-bot,roboclaw-bot,2026-10-14T04:03:11Z,2026-10-14T04:04:14Z,"test(ui): capture Inbox badge without removed sidebar footer
+
+Main removed the empty sidebar footer in f8ae13e69ef. Capture the visible Inbox control instead of timing out on that absent container. All 14 update-confirmation E2E cases pass; the original timeout reproduces on main.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/6f664ff69807e77282b6f365727e080416e62caf
+openclaw/openclaw,18488c6d36a47bc935a2a9794f715916de127d8e,steipete,Peter Steinberger,2026-10-14T04:03:11Z,2026-10-14T04:03:11Z,test(codex): await retry turn acceptance without polling (#171676),https://github.com/openclaw/openclaw/commit/18488c6d36a47bc935a2a9794f715916de127d8e
+openclaw/openclaw,0042530de3b2bc3dd1789e19b36763dcc743b4f7,ly85206559,Ben.Li,2026-10-14T04:01:13Z,2026-10-14T04:01:13Z,"fix(tlon): keep nested code examples intact in incoming messages (#171584)
+
+fix(tlon): keep nested fences inside incoming code blocks
+
+Tlon wrapped incoming code blocks in a fixed triple-backtick fence. When the code itself contained a ``` line (for example a Markdown example), that line closed the block early, and the model received the rest as broken prose. The fence is now longer than any backtick run inside the code. Plain code blocks are unchanged.
+
+Proof: built Gateway with the Tlon plugin against a mock ship (HTTP/SSE) and a recording provider. On main the model input parsed as code, paragraph, code; with this change it is one intact code block. The plain-code control is byte-identical.
+
+Thanks @ly85206559.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/0042530de3b2bc3dd1789e19b36763dcc743b4f7
+openclaw/openclaw,56e49682d8857e607c449fc67e2c4673b7abd34f,obviyus,Ayaan Zaidi,2026-10-14T04:00:39Z,2026-10-14T04:00:39Z,"fix(codex): project raw outer tool-call lifecycles (#171661)
+
+## What Problem This Solves
+
+The Codex harness projects native app-server items (`commandExecution`, `dynamicToolCall`, and so on) to the `codex_app_server.item` agent-event stream with `started`/`completed` phases. Outer model tool calls that Codex records as raw response items have no projected lifecycle: function calls, custom tool calls (for example the code-mode JS `exec` wrapper), local shell calls and tool-search calls. A plugin that must know whether any tool call is still running therefore sees the run as idle while an outer code-mode call is still open, because its child shell commands have already completed.
+
+This was found live with the Advisor plugin (#169564). It must not fork a session while a call is still open, because codex-rs normalization then fabricates an `aborted` output for the open call.
+
+## Fix
+
+`handleRawResponseItemCompleted` now also projects raw call receipts as `codex_app_server.item` `{ phase: ""started"", itemId: call_id, type }`, and their recorded outputs as `{ phase: ""completed"", itemId: call_id, type }`. Only phase, id and type are copied, never arguments or results. The app-server forwards raw response items after codex-rs records them in history, so `completed` means the output is persisted. Call and output receipts share `call_id` (codex-rs `protocol/src/models.rs`).
+
+## User Impact
+
+None by itself. Plugins that track in-flight work on Codex runs (with `payload: ""metadata""`) can now see outer tool calls start and finish. The existing subscriber (`run-attempt.steering-settlement`) is unaffected.
+
+## Evidence
+
+- Projector test: raw function, custom, local-shell and tool-search calls produce paired started/completed events with ids and types only.
+- The steering-settlement subscriber tests still pass.
+- Live (Advisor, Codex runtime): before this change, a review boundary was reached while the outer code-mode call was open, and the Gateway logged a missing custom-tool output. Advisor's regression, an outer call open while its children are complete, holds the review until the outer output is recorded.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/56e49682d8857e607c449fc67e2c4673b7abd34f
+openclaw/openclaw,177b090d8f4ab39279cfca1973fd24ca4d07df72,amittell,amittell,2026-10-14T04:00:23Z,2026-10-14T04:00:23Z,"fix(ai): turns fail without compaction when Hugging Face TGI rejects an over-long prompt (#158161)
+
+* fix(ai): reject exhausted proxy completions budgets in every thinking mode
+
+When the estimated input leaves no room for output, the openai-completions
+request builder falls back to max_completion_tokens=1 and still sends the
+request. #157673 turned that into a context overflow for thinking-enabled
+reasoning models; non-reasoning models and thinking-off requests still send
+the one-token request, which cannot hold a useful reply and comes back cut
+off by length.
+
+Throw the same context_length_exceeded error for those requests when the
+estimate leaves zero or negative output space, so the existing overflow
+recovery compacts instead. Positive short budgets (1-15 tokens that fit the
+estimate) and their insufficient_output_budget warning are unchanged for
+non-reasoning and thinking-off requests, and deliberately short requested
+budgets are untouched.
+
+Refs #157307
+
+* fix(ai): budget exhausted non-thinking proxy requests without the estimate margin
+
+The openai-completions request builder estimates input as chars/4 with a
+1.25 safety margin. Against a real tokenizer (Qwen3) that estimate is
+1.4-1.6x the true count for prose, code, tool schemas and CJK text, so a
+fixed prompt that really fills about 65-73% of the context was refused
+before provider I/O, with nothing for compaction to recover.
+
+When the margined estimate leaves no room and thinking is off (or the
+model is non-reasoning), budget from the unmargined chars/4 estimate
+instead and refuse only when that also leaves no room. If the unmargined
+estimate undercounts, the provider's own context-length rejection enters
+the same overflow recovery. Thinking-enabled requests keep the margined
+estimate and the 16-token floor from #157673.
+
+The runtime's required-maintenance test now passes unchanged: its
+foreground requests go out with roughly 700 and 4,400 output tokens
+instead of triggering an extra overflow compaction. The refusal fixtures move to estimates of at
+least 1.25x the context, and an explicit one-token request at an
+exhausted estimate is still sent.
+
+* fix(ai): hold proxy completions caps to the useful floor on both estimates
+
+The unmargined fallback only fired once the margined estimate left no room
+at all, so a non-thinking request whose margined room was 1-15 tokens was
+still sent with that cap (down to 1, the original one-token defect), and
+the cap then jumped back up once the margin was fully exhausted.
+
+For requests without thinking, budget from the unmargined estimate as soon
+as the margined estimate leaves fewer than 16 output tokens, and refuse
+with context_length_exceeded when the unmargined room is also under 16.
+Every cap that context pressure reduces is now at least 16 tokens, caps
+fall steadily within each estimate, and refusal is terminal as the prompt
+grows. Thinking-enabled requests keep the margined estimate and the
+16-token floor from #157673 unchanged. A caller's own maxTokens that fits
+the room (1, 2, 16) is still sent as requested; only budgets that context
+pressure cuts are held to the floor.
+
+The refusal now says which estimate it used and how many of the 16
+tokens remain, instead of ""leaves only 1 output tokens"" for an exhausted
+prompt. The margin drop is logged as keep_max_tokens when a caller's cap
+is honored without clamping, and the insufficient_output_budget warning
+is removed because no reduced cap under the floor is sent any more.
+
+* fix(ai): warn when proxy completions fall back to the unmargined estimate
+
+Budgets taken from the unmargined estimate were logged only at debug
+level, so the warn-level signal operators used to spot prompts at the
+context cap (the insufficient_output_budget lines) disappeared by
+default. Log those clamp_max_tokens and keep_max_tokens lines at warn
+level, with the margined estimate alongside, since the provider may
+still reject the request. Ordinary clamping stays at debug level.
+
+Document the requested-cap rule exactly: the room never counts below one
+token, so a requested cap of 1 is sent in every mode even when the
+estimate already exceeds the context, and a prompt that really does is
+rejected by the provider and enters overflow recovery. Any other
+requested cap within the room is sent as is, and a cap that context
+pressure cuts below 16 tokens is refused.
+
+Pin the fallback threshold (3,145 characters -> 16 tokens, 3,146 -> 212
+at a 1,000-token context), the refusal threshold (3,932 -> 16, 3,933
+refused), the refusal wording for both estimates, and the one-token
+request with thinking enabled.
+
+* fix(ai): recover from TGI context rejections through compaction
+
+Budgeting from the unmargined estimate lets an undercounted prompt reach
+the provider, so recovery depends on its rejection reading as an
+overflow. Hugging Face TGI rejects with HTTP 422 `Input validation error:`
+and one of two wordings from router/src/validation.rs:
+""`inputs` tokens + `max_new_tokens` must be <= N"" and
+""`inputs` must have less than N tokens"". classifyFailoverSignal returned
+`format` for both, which stops the runner's compaction, and
+isContextOverflow matched neither.
+
+Both wordings join the assistant and strict failover overflow tables.
+classifyFailoverSignal, isContextOverflowError and isContextOverflow now
+return overflow for both; a `max_new_tokens` limit on its own still does
+not. The corpus rows, the assistant-message rows and the predicate test
+fail without the table entries (2, 2 and 1 tests).",https://github.com/openclaw/openclaw/commit/177b090d8f4ab39279cfca1973fd24ca4d07df72
+openclaw/openclaw,2c97d7c4dc347729ff1920b29cb526795b88daf8,zhangguiping-xydt,xingzhou,2026-10-14T04:00:13Z,2026-10-14T04:00:13Z,"fix(agents): identity imports truncate names and avatar paths containing underscores (#171581)
+
+fix(identity): keep unmatched underscores in identity names and avatar paths
+
+When importing an IDENTITY.md file, the parser stripped every leading and trailing Markdown marker, so a name like `helper_` became `helper` and an avatar path like `_portrait.png` became `portrait.png`, which points to a different file. Only matched emphasis markers (such as `**Helper**` or `_Helper_`) are now removed. Other values are kept as written.
+
+Proof: built CLI, `openclaw agents set-identity --identity-file` and then reading the identity back. Main stored `helper` / `portrait.png`; with this change it stores `helper_` / `_portrait.png`. The bold and italic unwrapping controls are unchanged.
+
+Thanks @zhangguiping-xydt.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/2c97d7c4dc347729ff1920b29cb526795b88daf8
+openclaw/openclaw,525a7cd755d3f99bb9f96fab1e200614aab610b9,obviyus,Ayaan Zaidi,2026-10-14T03:57:39Z,2026-10-14T03:57:39Z,"feat(muse): sign in to Muse Code from Model Setup (#171526)
+
+## Problem
+
+Meta Muse Code needed terminal setup: `muse login`, `openclaw plugins enable muse`, and a hand-written `agentRuntime: { id: ""muse"" }` on the Meta model. Model Setup offered only ""Meta: API key"". Other subscription logins (xAI, GitHub Copilot, OpenAI Codex) already work from the Models page.
+
+## Solution
+
+- **Meta provider owns a ""Muse Code"" device-code choice** (`extensions/meta/muse-login.ts`). It runs `muse login` under supervision, shows the device code in the wizard, honors cancel, and gives an install hint when `muse` is missing. The Gateway login always uses Muse's file credential store under `<stateDir>/muse`, so one browser approval is enough. The macOS Keychain write fails for background Gateway processes.
+- **The credential stays Muse-owned.** No fake OpenClaw profile is written. The muse harness uses the managed credential when present and otherwise falls back to Muse's own store. Model availability uses the harness's existing catalog/readiness hooks over the same authenticated MSP `model/list`; it does not grant the direct Meta Responses route.
+- **Setup installs and routes the runtime.** `runtime-plugin-install.ts` gains a Muse descriptor beside Codex and Copilot. The auth result enables `muse` and returns an `agentRuntimeId: ""muse""` hint; setup writes it only to the activated agent's model entry (`agents.entries.<agent>.models[<model>]`). Global `agents.defaults.models` rows, including an explicit `openclaw` policy, and other agents are unchanged.
+- **Activation verification without a tool-free turn.** Muse cannot guarantee a zero-tool turn (MSP has no all-tools-off switch), so activation's `disableTools` probe cannot pass honestly. This adds an optional, activation-only harness `verifySetup`, used only for profileless native auth. Muse checks MSP `model/list` and requires `source: ""providerCatalog""` that contains the selected model. A rejected credential returns a bundled catalog and fails setup. Core binds the plugin owner/artifact fingerprints and re-runs the check before commit. Other runtimes keep the existing probe.
+- **Live authority.** The `models.authLogin` setup branch carries the existing connection/choice guard through activation; an invalidated device token stops the flow before `muse login`, verification or runtime install run.
+- **Catalog/UI.** The provider-login catalog marks native-setup choices `requiresSetup`. AI Setup → Connect provider lists them and dispatches through setup activation with connection-owned cancellation. The plain Provider Access list stays credential-only.
+
+## Evidence
+
+Live run on an isolated Gateway built from this branch. Real `muse` 1.3.0, real Meta device approval, no `META_API_KEY` in the environment:
+
+1. Models → AI Setup → Connect provider → Meta → **Muse Code**: device code shown, one approval, then ""Account verified and selected for this agent's default model"".
+2. Config written: `plugins.entries.muse.enabled: true`, `agents.entries.main.model: meta/muse-spark-1.3` with `agentRuntime.id: ""muse""` on main's entry only (no `agents.defaults.models` write); credential at `<stateDir>/muse/muse/auth.json`. Re-run on the final head: one approval, verified, chat reply `KIWI` from Muse Spark 1.3.
+3. Chat: ""Reply with exactly one word: PINEAPPLE"" → `PINEAPPLE` from Muse Spark 1.3; `muse serve` ran as a child of the Gateway.
+
+Before (main): Meta offers only an API key.
+
+![before](https://github.com/user-attachments/assets/c7e9bc73-25d8-4ece-8260-6c40e1f7b392)
+
+After: Muse Code choice, device code, verified, chat turn.
+
+![Muse Code choice](https://github.com/user-attachments/assets/e7f50faa-79e7-415e-be36-75473db3dd96)
+![device code](https://github.com/user-attachments/assets/487fb2d2-e4fc-4be7-b886-47d0268c1012)
+![verified](https://github.com/user-attachments/assets/86a4bafc-fa83-4d67-9a7b-9309538a645d)
+![chat](https://github.com/user-attachments/assets/9f4e91a8-02df-4f0f-9948-8c71be66ad9e)
+
+Focused tests: device-code approval/cancel/missing binary/one-approval, managed vs native credential selection, PATH-preserving env with a missing workspace, `verifySetup` success/rejection/pre-commit revocation and no-hook fallback, alternate-model routing with an API-key Spark row preserved, catalog `requiresSetup` and `models.authLogin` dispatch/disconnect, UI setup-dialog visibility. Shrink-only ratchet baseline updates.
+
+Authority and route regressions, run on the final head (production entry points with a recording fake `muse` binary):
+
+| Case | Command | Result |
+|---|---|---|
+| Invalidated admin connection (signals not aborted) cannot spawn `muse login` | `node scripts/run-vitest.mjs src/system-agent/setup-inference-credentials.authority.test.ts -t 'blocks native Muse login after the admin connection is invalidated without aborting'` | 1 passed; spawn log absent |
+| Invalidation during pending browser approval kills the child; no credential file written | `node scripts/run-vitest.mjs extensions/meta/muse-login.test.ts -t 'kills a pending login when authority is revoked without aborting the signal'` | 1 passed |
+| Revocation at the pre-commit recheck leaves config bytes unchanged | `node scripts/run-vitest.mjs src/system-agent/setup-inference-activate.test.ts -t 'does not activate a native sign-in revoked before commit'` | 1 passed |
+| Meta proxy `baseUrl` that the Muse harness does not support: setup fails before `verifySetup`, no commit | `node scripts/run-vitest.mjs src/system-agent/setup-inference-credentials.authority.test.ts -t proxy` | 1 passed |
+
+The native-login child persists the credential itself; OpenClaw stops it on lost authority (checked every 100 ms) and rechecks authority before verification, install and config commit. A credential written in the final instant before a kill stays in the plugin-owned Muse store and is not activated or selected.
+
+Live authority proof on a real Gateway built from this head (real `muse` 1.3.0, isolated state, redacted):
+
+Pending-login revocation (Control UI started Muse Code; device code shown, not approved):
+```
+## before revoke
+22637 muse login
+ls: cannot access '<state>/muse/muse': No such file or directory
+c1ff53b4…b6cd openclaw-control-ui operator
+$ openclaw devices revoke --device c1ff53b4…b6cd --role operator   # 03:30:13Z
+## after revoke (03:30:16Z)
+no muse login process
+ls: cannot access '<state>/muse/muse': No such file or directory
+Error: <state>/openclaw.json: No such file or directory   # no config commit, no plugin enable
+```
+The dialog closed and Models still shows ""Model required"".
+
+Non-admin caller (`operator.read` + `operator.write`, shared token) calling `models.authLogin` for `muse-code`:
+```
+{""phase"":""connect"",""ok"":true,""requestedScopes"":[""operator.read"",""operator.write""],""grantedScopes"":[""operator.read"",""operator.write""]}
+{""phase"":""models.authLogin"",""ok"":false,""error"":{""code"":""FORBIDDEN"",""message"":""missing scope: operator.admin""}}
+after: no muse login process; no <state>/muse dir; no config written
+```
+
+Existing data: a production 2026.10.x config copy passes `openclaw config validate` on this build (exit 0, only unrelated missing-env warnings), and the file bytes stay unchanged after load. The PR adds no schema, stored-row or config migration.
+
+Upgrade cell (pre-PR main build `2026.10.3 (f183f38)` writes the state, then this head reads the same state):
+```
+$ old config set 'agents.defaults.models[""meta/muse-spark-1.3""].agentRuntime.id' openclaw
+$ old models auth paste-token --provider meta --profile-id meta:default   # synthetic key
+Auth profile: meta:default (meta/token)
+== old build
+[{""id"":""meta:default"",""provider"":""meta"",""mode"":""token""}]
+{""meta/muse-spark-1.3"":{""agentRuntime"":{""id"":""openclaw""}}}
+== new build (this PR) on the same state
+[{""id"":""meta:default"",""provider"":""meta"",""mode"":""token""}]
+{""meta/muse-spark-1.3"":{""agentRuntime"":{""id"":""openclaw""}}}
+validate_exit=0
+```
+The SQLite-backed Meta API-key profile and the explicit runtime policy load unchanged.
+
+## Update behavior
+
+No config or stored-data migration; no schema change. Existing configs load unchanged: Meta API-key profiles and explicit `agentRuntime` policies are never rewritten (setup writes only the activated agent's entry), and terminal `muse login` users keep working through the native-store fallback. A warm Muse host is retired when the credential source changes, so a later Model Setup sign-in never reuses a host bound to the old store.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/525a7cd755d3f99bb9f96fab1e200614aab610b9
+openclaw/openclaw,c8abcdb210a3972dac388064a24508685531e243,steipete,Peter Steinberger,2026-10-14T03:56:06Z,2026-10-14T03:56:06Z,fix(qa-lab): keep self-checks exclusive and drain their cleanup (#171654),https://github.com/openclaw/openclaw/commit/c8abcdb210a3972dac388064a24508685531e243
+openclaw/openclaw,db6caaea9aebffc6782b63937db69f5e43bae364,roboclaw-bot,RoboClaw,2026-10-14T03:50:24Z,2026-10-14T03:50:24Z,"fix: preserve subagent completion delivery outcomes (#171657)
+
+* fix: preserve subagent completion delivery outcomes
+
+Keep confirmed delivery authoritative when receipt bookkeeping fails, classify unreported announcement errors, retain concrete retry failures, and identify blocked child runs.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix: preserve subagent completion delivery outcomes
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: 3d866f2a-a15b-49a8-b1b5-c3a195d22919
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/db6caaea9aebffc6782b63937db69f5e43bae364
+openclaw/openclaw,01d4ffd14b920e9d55dd72c9a6fb077f28e93d4d,openclaw-mantis[bot],openclaw-mantis[bot],2026-10-14T03:49:41Z,2026-10-14T03:49:41Z,"chore(ui): refresh control ui locales (#171665)
+
+Co-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/01d4ffd14b920e9d55dd72c9a6fb077f28e93d4d
+openclaw/openclaw,02c61723bd0159b46628349742b092bf32a00d3b,steipete,Peter Steinberger,2026-10-14T03:49:17Z,2026-10-14T03:49:17Z,docs(agents): first-party plugins support only the current host,https://github.com/openclaw/openclaw/commit/02c61723bd0159b46628349742b092bf32a00d3b
+openclaw/openclaw,85cabbe881736d00d7780cfe96c4899544e077cf,steipete,Peter Steinberger,2026-10-14T03:48:53Z,2026-10-14T03:48:53Z,fix(codex): keep stopped conversations ready for the next reply (#171656),https://github.com/openclaw/openclaw/commit/85cabbe881736d00d7780cfe96c4899544e077cf
+openclaw/openclaw,3cc79a1d14a10cac1464c6cd4ac0028d0c8b27d4,ericcaiwx-star,Eric Cai,2026-10-14T03:48:09Z,2026-10-14T03:48:09Z,"fix(gateway): recover ACP-only stores after slow startup (#171447)
+
+* chore: claim #171395
+
+* test(gateway): cover ACP-only deferred admission
+
+* fix(gateway): recover ACP-only stores after slow startup
+
+* test: cover ACP deferred database admission
+
+* fix: defer configured ACP session stores
+
+* fix(gateway): simplify ACP-only startup admission
+
+Use the native roster after lazy imports to distinguish auth/model prerequisites without carrying a stale config snapshot across module loading. Consolidate slow-start fencing coverage for native and ACP-only stores and document recovery. Fixes #171395.
+
+Co-authored-by: Eric Cai <ericcaiwx@gmail.com>
+
+---------
+
+Co-authored-by: Peter Steinberger <steipete@gmail.com>
+Co-authored-by: Eric Cai <ericcaiwx@gmail.com>",https://github.com/openclaw/openclaw/commit/3cc79a1d14a10cac1464c6cd4ac0028d0c8b27d4
+openclaw/openclaw,c17dabc484fa31f05c0a970dc3109076af84b4cf,steipete,Peter Steinberger,2026-10-14T03:46:13Z,2026-10-14T03:46:13Z,"fix(agents): avoid false local service shutdown failures (#171587)
+
+Wait for bounded process-tree signal completion before observing final exit.
+Retain child-close and PID-replacement ownership checks. Cover delayed taskkill
+close and timeout through the real provider lifecycle, and document timing.
+
+Preserves the repair from #171498 and addresses #171472. macOS native shutdown
+and controlled Windows signaling regressions pass; native Windows is unverified.
+
+Co-authored-by: Dallin Romney <dallinromney@gmail.com>",https://github.com/openclaw/openclaw/commit/c17dabc484fa31f05c0a970dc3109076af84b4cf
+openclaw/openclaw,b656d96a421c54eade946f9c14d209276d602120,steipete,Peter Steinberger,2026-10-14T03:45:47Z,2026-10-14T03:45:47Z,"fix: avoid per-token Markdown parsing after quoted tool XML (#171573)
+
+* perf: avoid reparsing quoted tool XML on every stream delta
+
+Retain Markdown-owned block-code classifications across appended deltas. Keep partial tags and unprotected markup on the canonical XML sanitizer, and reset classification on source replacement. Add a parsed-character regression through the message-update handler and preserve GLM/invocation coverage across provider stream shapes.
+
+* fix: include XML parser in PR wrapper source inventory",https://github.com/openclaw/openclaw/commit/b656d96a421c54eade946f9c14d209276d602120
+openclaw/openclaw,82b8f59a3ec944adafb05fe802928e353761f4c1,masatohoshino,Masato Hoshino,2026-10-14T03:44:58Z,2026-10-14T03:44:58Z,"fix(ui): browser Talk on Gemini 3.8 Live drops spoken user turns from history (#171506)
+
+* fix(ui): browser Talk on Gemini 3.8 Live drops spoken user turns from history
+
+Gemini 3.8 Live sends each input utterance as one complete inputTranscription message without finished, like 3.1. The browser transport finalized complete input only for 3.1, so 3.8 user turns stayed pending and were discarded at stop. Apply the same rule the Gateway relay uses for 3.1 and 3.8.
+
+* test(ui): guard Gemini Talk transcript finality and duplicate completion
+
+---------
+
+Co-authored-by: Peter Steinberger <steipete@gmail.com>",https://github.com/openclaw/openclaw/commit/82b8f59a3ec944adafb05fe802928e353761f4c1
+openclaw/openclaw,4a62f40a58d9995f076525b3b82fcf0aed3da464,steipete,Peter Steinberger,2026-10-14T03:44:24Z,2026-10-14T03:44:24Z,"perf(config): reuse plugin schema validation across revisions (#171592)
+
+* perf(config): reuse plugin schema validation across revisions
+
+* test(config): narrow required validation fixture values
+
+* fix(config): retire removed plugin validation inputs",https://github.com/openclaw/openclaw/commit/4a62f40a58d9995f076525b3b82fcf0aed3da464
+openclaw/openclaw,7fc9770d4618e9abec9863613b7e3fe23c6ab934,steipete,Peter Steinberger,2026-10-14T03:43:51Z,2026-10-14T03:43:51Z,"fix(agents): keep Responses tool-call history stable across turns (#171614)
+
+* fix(agents): keep Responses tool-call history stable across turns
+
+Keep canonical paired tool-call and result IDs intact through replay. Move orphan function item ID omission to the shared Responses serializer and remove the runner downgrade policy.
+
+Add bounded static field paths to prompt-history diagnostics without logging content. Cover admitted multi-turn Responses replay and both serializer entry points; Team microbenchmark is neutral within noise.
+
+* test(agents): align Responses replay checks with stable paired ids
+
+Keep SDK item adoption and repaired result linkage assertions while checking orphan IDs only at wire serialization. Shrink the exact assertion baseline after removal of six casts.
+
+* fix(ai): require reasoning item identity before replaying function ids",https://github.com/openclaw/openclaw/commit/7fc9770d4618e9abec9863613b7e3fe23c6ab934
+openclaw/openclaw,9cc6124bcf156bb332747121d0b4de09a0ebab80,steipete,Peter Steinberger,2026-10-14T03:42:09Z,2026-10-14T03:42:09Z,"fix(matrix): resolve room policy by room id, not display name (#171645)
+
+Matrix set GroupSubject to the user-editable room display name and never set GroupChannel, so core fell back to the display name as groupChannel and Matrix group policy matched it as a trusted alias before the ""*"" fallback; a room renamed to a trusted room's name could take on that room's tools and requireMention. Ingress now sets GroupChannel to the room id and carries the homeserver-resolved room tool policy through the existing trusted context field; groupChannel only recovers the same room id's casing, and display names are presentation-only. DMs are unchanged. Fixes #168134.",https://github.com/openclaw/openclaw/commit/9cc6124bcf156bb332747121d0b4de09a0ebab80
+openclaw/openclaw,f8ae13e69ef420bff2e2c386d5f7ef3d349e8610,roboclaw-bot,RoboClaw,2026-10-14T03:41:04Z,2026-10-14T03:41:04Z,"fix: remove empty sidebar profile footer (#171644)
+
+* fix: remove empty sidebar profile footer
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix: remove empty sidebar profile footer
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: 4ad36ae1-50c3-44b8-826e-7517e8fefa06
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/f8ae13e69ef420bff2e2c386d5f7ef3d349e8610
+openclaw/openclaw,1d4205a563cc6fff854e2357ee133be0c1ccadba,DonnieFi,Donnie Fiander,2026-10-14T03:40:44Z,2026-10-14T03:40:44Z,"fix(auto-reply): typed level directives ignore digit and underscore aliases (#168470)
+
+fix(directives): accept digit and underscore level aliases in typed directives
+
+Typed level directives only accepted letters and hyphens, so existing aliases with digits or underscores were misparsed: `/verbose 1` did not turn verbose on (the leftover `1` could reach the agent), and `/think think_hard` set the level to minimal instead of low. The directive tokenizer now accepts these existing aliases. Prose after a directive, such as `/verbose 3d printing tips`, is still left alone.
+
+Proof: built Gateway with qa-channel, and the Telegram Test Server with native commands off, so typed text is parsed. On main `/verbose 1` and `/think think_hard` were misparsed; with this change `/verbose 1`, `/think think_hard` and `/think extra_high` are acknowledged correctly without an agent turn. The prose and `/think high` controls are unchanged.
+
+Fixes #168254. Thanks @DonnieFi, and @yetval for the earlier fix in #164698.
+
+Co-authored-by: yetval <yetvald@gmail.com>
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/1d4205a563cc6fff854e2357ee133be0c1ccadba
+openclaw/openclaw,5349eb47ed45a8b1ca8d224f829e7e4225db9029,steipete,Peter Steinberger,2026-10-14T03:39:25Z,2026-10-14T03:39:25Z,"refactor(channels): simplify older plugin paths and keep content out of diagnostics (#171606)
+
+## What Problem This Solves
+
+Older channel-plugin code duplicates shared SDK ownership and carries defensive machinery for unsupported internal inputs, synthetic clocks, and throwing diagnostic hooks. Several normal inbound paths also put message content or pairing codes into diagnostics.
+
+## User Impact
+
+Message delivery, account/security policy, conversation identity, provider features, and ordinary shutdown/restart durability remain supported. Inbound message text, malformed Teams consent payloads and pairing codes no longer appear in the repaired diagnostic paths. No configuration, CLI, protocol, SDK export, dependency, schema, retention, or permission changes are required.
+
+## Why This Change Was Made
+
+This is the second old-code channel-plugin pass. Only production files with no origin/main commit in the preceding seven days are included; eligibility is refreshed before every push. The overlapping Feishu Markdown fence repair was removed from this branch once main independently landed it in #171222.
+
+The packet removes **512 net production lines** (+503/-1015; tests, fixtures, test support, generated files, and declarations excluded). It reuses existing public SDK owners for plugin setup composition, secret-contract wiring, receipts, status summaries, process-global maps, error traversal, and account-scoped DM policy. There are no private-core or cross-plugin imports.
+
+## Best-effort tradeoffs accepted
+
+Each removed mechanism below was checked against callers, dependency behavior, and introducing history. Synthetic tests and hypothetical PR race descriptions are not treated as human production reports. Actual incident fixes, live security authority, FIFO, resource bounds, and accepted-write settlement are retained.
+
+- Discord identify clock-skew observation (`c767b37e3b2`): the only added proof jumps the clock from a trillion milliseconds to zero; no human report is linked. A drastic backward clock jump can now prolong reconnect until clock recovery/restart; ordinary five-second parallel identify spacing remains.
+- WhatsApp second synchronous close observation (#109886, `bf413374cca`): native Baileys uses EventEmitter and cannot asynchronously close between synchronous check/listener registration. A nonstandard reentrant `newListener` hook can reach the existing bounded timeout; transport-confirmed close and cleanup remain.
+- Tlon formatter fallback (#1837, `51720980736`): validated decimal BigInt input cannot fail the pinned @ud formatter. A broken dependency now fails visibly instead of sending the incorrect raw ID that the original threading fix rejected.
+- Matrix second private sync waiter (#62779, `0c00c3c2306`): the actual monitor waits once; only a synthetic test calls twice. An unsupported second call may replace the first callbacks; real outage/fatal/abort settlement remains.
+- ClickClack outer setup catches (`752567dbc8e`): network/config failures are already caught by their owners; the extra path catches a broken logger/formatter then invokes the same logger again. Such internal failures now surface; ordinary setup diagnostics remain.
+- ClickClack second workspace snapshot (`3e352d67278`): verification now resolves ID/name/slug from one provider response. A concurrent rename/removal is observed on the next verification/runtime request rather than an opportunistic second fetch.
+- SMS generated-fragment revalidation (#118665, `0758316883f`): raw URL validation stays; only URLSearchParams-generated fragment bytes were checked twice. A monkeypatched/broken encoder is no longer revalidated; length, auth, URL and retry bounds remain.
+- Feishu timeout-warning catch (`0028e6040a7`): the cited stuck-task/FIFO issues concern the retained five-minute cap, not a throwing logger. A broken warning hook now rejects that queue call visibly; subsequent same-key work continues.
+- Feishu private timeout customization (`0028e6040a7`, `fab8d29d211`, #101949): only tests passed disabled/oversized/custom values. Unsupported direct imports can no longer tune/disable the private cap; all production callers retain five-minute progress/FIFO behavior.
+- Reef logger-fatal deferred/race (#162669; synthetic hook in #110870): ordinary transport-error containment and shutdown from the recorded live relay incident stay. A throwing error logger is reported by the scheduler instead of intentionally killing an otherwise healthy inbox.
+- Matrix nonfinite media size fallback (`9b71382efb6`, #149128): the sole production producer passes Buffer.byteLength; NaN cases were synthetic cleanup fixtures. Unsupported private NaN calls now carry that supplied value; MIME, encryption, image fields and duration remain.
+- Buzz subscription count coercion (`6c7a96e588e`): the sole caller supplies array.length. Unsupported negative/fractional private values are not repaired; the actual room/resource cap remains.
+- Teams upload-byte coercion (#104120, `0c8220ebf9a`): both callers supply Buffer.length. Unsupported malformed private counts follow transfer arithmetic; timer clamping and upload budgets stay.
+- Nostr zero-count score fallback (`7b6cbf58697`): private entries are synchronously created and incremented together. An unsupported new zero-outcome insertion could score NaN; actual outage/circuit-breaker/failover behavior stays.
+- Buzz profile-limit coercion (`ba2510e8fa8`): the only explicit producer supplies the bounded integer budget. Unsupported direct malformed limits are not normalized; ordinary caps, zero-budget and untrusted-event checks stay.
+- Feishu card-launcher clock injection/max-Date guard (`05634708e05`): only a synthetic year-275760 test supplies the private clock. A corrupt clock may create an unusable expiry until recovery/restart; effect-side expiry, actor/chat and approval validation stay.
+- QA private empty media-batch guard (#115290, `641c82b5bd0`): all three callers prove a nonempty batch. Unsupported direct empty calls take the ordinary text path; real media caps and atomic loading remain.
+- Slack private global-map slot revalidation (original sharing fix `55318df83ff`): normal module sharing/replacement is retained. No human private-slot corruption report is linked; third-party mutation/deletion of our private Symbol slot is no longer checked on every read, and restart repairs unsupported corruption.
+- Buzz synchronous subscription-construction compensation (`b48984792f4`, `828f88c5ca5`, #130300): native nostr-tools construction emits no callbacks and authored filters are plain/nonempty. Unsupported throwing/cyclic private filters or replaced constructors surface without immediate count/generation/timer compensation; close/deadline/restart recovers temporary state.
+- Buzz post-construction inline-EOSE/abort retry (same provenance): native callbacks are asynchronous. A non-native constructor emitting EOSE inline no longer gets a second cleanup attempt; real EOSE-before-CLOSE, late EOSE, close-once, deadlines, queued slots, abort listeners, membership authority and shutdown remain. Fixtures now schedule EOSE with queueMicrotask while retaining assertions.
+- Signal clean-end recovery duplication (#10240, `dff4a04c1f5`): clean EOF and transient failures share one backoff tail. An impossible non-abort internal sleep rejection or broken status/logger callback now surfaces rather than entering compensating reconnect; real sleep rejects on abort and actual recovery stays.
+- WhatsApp optional native socket-end fallback (`69225003820`): actual callers use WASocket with required end(). An unsupported fake without end fails plainly; normal teardown and its error reporting stay.
+- Nextcloud post-synchronous-route abort check (#159067, `5fd7c3d95e0`): the old awaited server-start path became synchronous route registration. A reentrant registry callback abort may briefly publish ready; installed abort cleanup, post-spool-ready check, auth and durable settlement stay.
+- Buzz history-count clamps (`132e39bff64`): the actual positive room count and queue-capacity invariant guarantee the result. Unsupported private negative/oversized counts are not repaired; actual FIFO/resource reservations remain.
+- LINE frozen-error wrapper (#100996, `f859d78b612`): native SDK HTTPFetchError is mutable; Object.freeze was a synthetic fixture, not a cited human incident. An unsupported frozen replacement error can now fail annotation with TypeError; actual partial-send/recovery contracts stay.
+- LINE duplicate missing-receipt invariant (`05eda57b3c7`, #99600, #142092, #165718): all native sends return validated IDs and required receipts. Unsupported fake results use canonical bridge normalization instead of the former private throw; physical-send progress, caption quoting, receipt order and declared capabilities stay. The bridge also preserves already-sanctioned chatId metadata.
+- Feishu display-cache extreme-clock guards (`23e1aac9b2c`): introduced with a synthetic max-Date test, no linked human report. Corrupt clocks follow ordinary arithmetic; account scope, positive/negative TTL and the 500-entry bound remain.
+- Mattermost reaction-identity extreme-clock guards (`77b334a9845`): only invalid/max-Date tests support the machinery, no linked human report. Corrupt clocks follow arithmetic; token/base-URL scope, ten-minute expiry, delegated conversation/post/self-DM checks and request authority remain.
+
+Other cuts remove duplicate facts/checks under one existing owner and introduce no additional failure tradeoff: Signal subscription/abort state, Zalouser Promise settlement and DM setter, Nextcloud claimed version/lane validation, Teams media/header validation and empty-array merging, Buzz refresh-state identity, Nostr flush identity, Matrix encryption gating, Mattermost runtime-config guard, immutable plugin setup bases, and private Discord/iMessage test overrides.
+
+Matrix's private zero-answer poll fallback is also removed: its sole caller has already passed the shared minimum-two-options validator (`c49b6cc241a`, #163574). No reachable input loses a fallback. Teams attachment header rejection remains owned by the canonical bounded media saver; malformed/oversize headers now use the existing `attachmentView save failed` warning instead of the special malformed-header tag or silent oversized-header skip. The unavailable result and byte protection remain unchanged.
+
+## Evidence
+
+Focused owning-boundary/sibling tests and independent isolated reviews were run per checkpoint. Latest batches passed: Discord/LINE/Matrix/Synology 76 cases (157.00s wrapper), LINE/Feishu/Mattermost 66 cases (132.62s), Mattermost reaction 12 cases, Zalo Personal setup 17 cases (48.97s), and Teams consent/parser/lifecycle 52 cases (29.18s). The Teams malformed-content regression failed on the original handler before the one-line repair. The new Zalo test fixture initially assumed the wrong promotion target; source inspection and an explicit two-account fixture corrected it without changing production behavior or weakening retained assertions.
+
+Production/test extension typechecks and targeted type-aware lint/format pass. Runtime and Madge checks report zero cycles. Existing SDK export checks pass. Earlier fresh cliStartup build and affected built-entry import proof passed; no performance improvement is claimed from dirty-tree profiling. No live accounts, operator state, driver installation, Gateway or remote lease was used.
+
+Final Matrix poll/send/shared-normalization proof passes 55 cases across three shards (138.50s wrapper). Independent full-branch review and the supplemental poll review found no actionable P0–P2 findings.
+
+Two local baseline gates are inherited from the branch base: suppression inventory expects 87 versus the untouched proxy's 88 (current main has repaired the entry); aggregate check-changed stops on stale untouched max-lines entry src/agents/btw.ts after conflict/line-cap gates pass. No allowlist/budget expansion was made. Earlier cold-start timing-sensitive failures remain observations, not claimed repaired/inherited; the complete changed cold-start file subsequently passed all eight cases with unchanged timers/assertions.
+
+The first exact-head hosted run [38503961141](https://github.com/openclaw/openclaw/actions/runs/38503961141) completed in 643 seconds: 51 jobs passed, 25 planned jobs skipped, and the baseline ratchet plus its aggregate gate failed. The defect was ours: removed Slack/Twitch assertions and two removed ClickClack mocks needed exact inventory shrinkage. Those four inventory items are corrected without adding allowances or changing behavior. All actual tests, types, lint, architecture, package boundaries, QA and security jobs passed on that production patch. Final exact-head run [38505676106](https://github.com/openclaw/openclaw/actions/runs/38505676106) passed on `86922ccf92825d4b53b77005119590d1e7759a32`: 55 successful jobs, 25 planned skips, zero failed/cancelled jobs, 643 seconds wall time and 9,679 summed reported job seconds. The exact-head required CI/security gate passes. CodeQL also reports a neutral warning for unselected main configurations; those skipped configurations are not claimed as proof. No CI rerun, inherited-failure admin exception, or green-seeking push was used.
+
+<details>
+<summary>Round-2 largest-first coverage log</summary>
+
+Setup/runtime composition is consolidated for Buzz, Nostr, A2A and Google Chat; setup stays dependency-light. Matrix/Feishu secret activation uses the existing factory with activation/order/owner rules unchanged. IRC shares parsing/status owners. LINE shares receipt/progress mapping without routing through legacy media behavior. Zalo Personal shares the existing account-scoped DM policy owner. Privacy regressions reach real WhatsApp/iMessage/Synology inbound and Feishu pairing diagnostic paths while asserting complete dispatch/challenge behavior.
+
+Largest old owners retained after source/caller/history review include iMessage catchup/conversation repair; Matrix formatting/actions/crypto/shutdown; Mattermost interactive access/draft boundary/final receipts; Signal approvals/transport setup; Slack ingress FIFO/thread visibility/workspace identity/streaming; WhatsApp paid-STT/admission/quoted identity/partial delivery; Teams Graph/Bot Framework/upload consent security; Buzz signed membership/archival authority/resource budgets; Nostr circuit breakers/profile mutation auth; LINE provider caps/reply-token/media ordering; Twitch listener/auth resource ownership; SMS callback/API ordering; Synology auth/rate limits/durable acknowledgments; Reef encryption/transport error containment; FaceTime trust/rollback/permissions; and paid X request accounting.
+
+Recent files were deferred, including remaining Teams inbound-body, Tlon admin/approval-text and WhatsApp outbound-content diagnostics; recently landed feature foundations were not treated as dead code. QA setup-base consolidation was held because completing its runtime caller would exceed the one-line recent-file exception. No Phase E standalone memory code was touched. Detailed per-mechanism provenance and checkpoint evidence is retained in the requested round-2 lane ledger.
+
+</details>",https://github.com/openclaw/openclaw/commit/5349eb47ed45a8b1ca8d224f829e7e4225db9029
+openclaw/openclaw,d67967a3aae780b0673c6103588686438a204807,roboclaw-bot,RoboClaw,2026-10-14T03:38:31Z,2026-10-14T03:38:31Z,"fix: clear stale errors after suggested task retry (#171640)
+
+Track shared chat error writes independently so a confirmed retry clears only the failed task acceptance error, preserving newer and unrelated failures.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/d67967a3aae780b0673c6103588686438a204807
+openclaw/openclaw,b36cab903306db5cfd692ccb4df3539d7e2e8f1a,steipete,Peter Steinberger,2026-10-14T03:20:32Z,2026-10-14T03:37:30Z,"test(ui): retire obsolete publication dropdown probe
+
+The Solid menu migration removed publication's Web Awesome dropdown
+import, so loading the cold publication boundary no longer registers
+wa-dropdown-item. Remove the probe for that retired dependency while
+preserving every translation assertion and the duplicate-safe registry
+fixture.
+
+Keyboard navigation and real item focus remain covered at the shared
+Solid Menu owner in menu-navigation.browser.test.tsx.",https://github.com/openclaw/openclaw/commit/b36cab903306db5cfd692ccb4df3539d7e2e8f1a
+openclaw/openclaw,b7ccf312ac57ac077a934bfb2c10bc35c2e99f8b,steipete,Peter Steinberger,2026-10-14T03:17:34Z,2026-10-14T03:37:30Z,"fix(test): settle tooltip hovercard imports before teardown
+
+Await the lazy definition started by the inherited-title interaction after disconnecting its fixture. This prevents the import chain from outliving the test environment while preserving every ownership assertion.",https://github.com/openclaw/openclaw/commit/b7ccf312ac57ac077a934bfb2c10bc35c2e99f8b
+openclaw/openclaw,533feba7fd0de88b658ce1d2d15788c97b186968,steipete,Peter Steinberger,2026-10-14T03:15:12Z,2026-10-14T03:37:29Z,"test(ui): retain config outage during uninstall feedback
+
+Keep mock config reads unavailable through the uninstall feedback assertions,
+then restore success before reinstall. The fixture previously rejected only one
+request while the config owner deliberately follows newer refreshes.
+
+Preserve the existing feedback, inspection, spinner, route, and reinstall
+assertions. This is fault-fixture hardening; the exact competing-read timing from
+the scheduled CI failure has not been reproduced.",https://github.com/openclaw/openclaw/commit/533feba7fd0de88b658ce1d2d15788c97b186968
+openclaw/openclaw,d7e3fcb3293ba385b88f1b0638d13023d0e38fe3,he-yufeng,Yufeng He,2026-10-14T03:36:22Z,2026-10-14T03:36:22Z,"fix: doctor reports false transcript mismatch for imported legacy sessions with media (#171388)
+
+* fix: canonicalize staged events in SQLite transcript verification
+
+Verification replayed raw legacy event JSON into the comparison stage
+while the store owner canonicalizes message media on write, so an
+imported legacy transcript carrying MediaPath/MediaType fields could
+never match its stored bytes and doctor reported a false mismatch.
+Stage canonical bytes instead and cover it with a regression test.
+
+* fix(doctor): preserve conflict checks for canonical legacy media
+
+Reuse the transcript writer's media normalization during verification.
+Cover all legacy media fields and ordered, contained, and appendable checks,
+including genuine content, attachment, and metadata conflicts without writes.
+
+Fixes #171312
+Related: #171373
+
+Co-authored-by: Yufeng He <40085740+he-yufeng@users.noreply.github.com>
+
+---------
+
+Co-authored-by: Peter Steinberger <steipete@gmail.com>
+Co-authored-by: Yufeng He <40085740+he-yufeng@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/d7e3fcb3293ba385b88f1b0638d13023d0e38fe3
+openclaw/openclaw,07c5ac294759930b15fdd7172c9cbdc3e0812713,amittell,amittell,2026-10-14T03:35:05Z,2026-10-14T03:35:05Z,"fix(agents): stop messaging dedupe from dropping replies that extend a tool send (#151921)
+
+fix(agents): deliver final replies that add a correction to an earlier send
+
+If the agent first sent a message with the message tool and its final reply started with that same text and then added a correction (for example ""Deployment finished."" then ""Deployment finished. Actually it failed.""), reply dedupe treated the final reply as a duplicate and dropped it, so the user never saw the correction. A final reply that starts with an earlier send and adds new words is now delivered. Exact repeats, punctuation-only tails and replies that only join earlier sends are still suppressed.
+
+Proof: built Gateway with qa-channel and a scripted provider. On main the correction was suppressed; with this change it is delivered. The exact-repeat, punctuation-only and concatenated-send controls stay suppressed. A real Telegram Test Server user also received the correction.
+
+Thanks @amittell.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/07c5ac294759930b15fdd7172c9cbdc3e0812713
+openclaw/openclaw,0242f6d5ee0048aeb58bcaeb2dd8adf5f936c58f,steipete,Peter Steinberger,2026-10-14T03:34:33Z,2026-10-14T03:34:33Z,"perf(talk): reuse applied config in discovery handlers (#171607)
+
+* perf(talk): reuse applied config in discovery handlers
+
+Keep Talk config projection on the Gateway's applied runtime/source pair, preserve canonical session and appearance values, and carry prepared TTS config through catalog readiness. Avoid per-RPC file validation and duplicate runtime selection without caching live readiness.
+
+* test(talk): preserve real config exports in handler mock",https://github.com/openclaw/openclaw/commit/0242f6d5ee0048aeb58bcaeb2dd8adf5f936c58f
+openclaw/openclaw,2d3b09e5644b120feb58dd3d2454c3cf76696912,steipete,Peter Steinberger,2026-10-14T03:34:21Z,2026-10-14T03:34:21Z,"fix: keep pending Code Mode calls active during recovery (#171570)
+
+Track outer Code Mode controls through their pending lifetime so nested tool completion cannot make recovery mistake them for a stalled embedded run. Preserve control identity at the lifecycle wrapper metadata boundary and cover completion, resumed wait, and cancellation. Existing recovery thresholds remain in force.",https://github.com/openclaw/openclaw/commit/2d3b09e5644b120feb58dd3d2454c3cf76696912
+openclaw/openclaw,b6d5dd3995fded5f9d38c42973098ab182e548de,steipete,Peter Steinberger,2026-10-14T03:33:54Z,2026-10-14T03:33:54Z,"fix(usage): prevent unowned database errors during background refresh (#171632)
+
+Carry captured logical store bindings through worker discovery and replay. Yield bounded refresh batches between whole transcript publications, preserving exact-read and repair continuation identities.",https://github.com/openclaw/openclaw/commit/b6d5dd3995fded5f9d38c42973098ab182e548de
+openclaw/openclaw,7e52a2fccb4d12b7189dfab3cfb0c1ddc32dbc3d,steipete,Peter Steinberger,2026-10-14T03:33:38Z,2026-10-14T03:33:38Z,"fix(gateway): keep worker placement checks readable during turn ACK writes (#171206)
+
+Synchronous placement replica reads hid the committed receipt while any
+same-session publication was pending. A worker turn's own ACK-cursor and
+result writes are almost always in flight, and the required-worker policy
+check reads placements.get() on every launcher preparation assertion, so
+queued follow-ups failed mid-run with ""Await getAsync to read a placement
+without a committed in-process receipt"".
+
+Use the retained reader's existing rule in readPlacementReplica: only a
+pending claim publication hides the receipt. Result, ACK, and journal
+writes leave the execution target unchanged.
+
+The required-native same-session E2E now fails fast with Gateway error
+lines when its session publishes a run error, instead of waiting for the
+360-second timeout.",https://github.com/openclaw/openclaw/commit/7e52a2fccb4d12b7189dfab3cfb0c1ddc32dbc3d
+openclaw/openclaw,1d8d0e04d6cd2bb3232e7334e5c021e7c557c8b6,Yigtwxx,Yiğit ERDOĞAN,2026-10-14T03:31:23Z,2026-10-14T03:31:23Z,"fix(agents): WebChat reaction failures suggest external-channel setup (#171264)
+
+fix(message): fail prompt reactions locally when no prompt allows them
+
+In a run with no current prompt that permits reactions (for example a heartbeat or internal event), a prompt-targeted react call fell through to external-channel selection. The tool then told the model to configure an external channel, and the model passed that wrong advice on to the user. The call now fails locally with ""No prompt here permits reactions; pass channel, target, and messageId."" Admitted prompt reactions and explicit external reactions are unchanged.
+
+Proof: built CLI, webchat run with no reaction grant and a scripted model calling react. Main returns external-channel setup guidance; with this change it returns the local no-prompt error. Neither version sends a reaction. Control: an admitted WebChat prompt reaction through the Gateway still succeeds. Live openai/gpt-5.4-mini replies reflect the corrected guidance.
+
+Thanks @Yigtwxx.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/1d8d0e04d6cd2bb3232e7334e5c021e7c557c8b6
+openclaw/openclaw,dffe00183d400105fb73447fc439602b30da08cd,roboclaw-bot,RoboClaw,2026-10-14T03:30:47Z,2026-10-14T03:30:47Z,"fix(ui): avoid delayed Safari tint after sidebar closes (#171617)
+
+* fix(ui): avoid delayed Safari tint after sidebar closes
+
+Anchor the mobile drawer scrim to the app canvas so Safari does not add an independent fixed-background color-extension fade. Preserve safe-area coverage and verify portrait, landscape, viewport resize, and drawer interactions.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix(ui): avoid delayed Safari tint after sidebar closes
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: a576acab-b4ac-43ed-8725-1b6488c871a6
+
+* fix(ui): type scrim hit-test coordinates as pairs
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/dffe00183d400105fb73447fc439602b30da08cd
+openclaw/openclaw,93e8fe353765072d576d2379f6c8b0a57fce343b,steipete,Peter Steinberger,2026-10-14T03:30:21Z,2026-10-14T03:30:21Z,"fix(sessions): portable transcript reader SQL for PostgreSQL (#171545)
+
+Make transcript history, model context, mirror lookup, and retained suffix-copy SQL portable to PostgreSQL while preserving SQLite statement text except the accepted TRUE/FALSE CASE literals. Keep retained-copy byte accounting exact for stored PostgreSQL text.
+
+Include cross-engine transcript-reader conformance coverage and record its documented type suppression in the inventory. PostgreSQL conformance executed and passed on the final head; required CI run 38501839785 passed.
+
+Related: #171466, #171484.",https://github.com/openclaw/openclaw/commit/93e8fe353765072d576d2379f6c8b0a57fce343b
+openclaw/openclaw,2c87e333990141e6aa433fd05f1a82f09fca8a5e,obviyus,Ayaan Zaidi,2026-10-14T03:27:25Z,2026-10-14T03:27:25Z,"feat(sessions): run sessions in existing folders on paired devices (#169722)
+
+Related: #136048 (non-Git directory semantics) and #142521 (non-Git worker workspace context; this PR does not implement ephemeral cloud workspaces).
+
+## What Problem This Solves
+
+Device-hosted sessions required a Git repository or managed worktree, a constraint inherited from ephemeral cloud sessions, even when a paired personal machine should simply work in an existing non-Git folder.
+
+## User Impact
+
+Users can choose **Existing folder on device** in New Session and run a session directly in an existing folder on a paired session-host device. OpenClaw does not create Git metadata, copy the folder to the Gateway, or sync, reconcile, reset, or delete it.
+
+- `nodeHost.workerRuns.folders` is node-local consent: unset allows existing directories, a non-empty list restricts selection to those roots and their descendants, and `[]` disables the feature and its capability advertisement.
+- The session stays pinned to that device: Auto/cloud dispatch, Move, and Continue on Gateway are refused. Attachment staging and the Gateway Files panel are unavailable for these sessions.
+- Worker HOME stays in private node storage. Files are not locked against external changes.
+
+## Why This Change Was Made
+
+- `sessions.create` accepts `deviceFolder: { deviceId, path }` (requires `operator.write`); the binding is stored on the existing session entry and the `device-folder` workspace kind reuses the worker execution and lifecycle owners.
+- The node owns folder policy and re-validates on every use: absolute or `~` paths only, realpath resolution (symlinks cannot escape a root), no filesystem root, no overlap with private worker storage, and a dev/ino fence between acquisition and execution. One shared rule in `node-workspace-protocol.ts` forbids preparing, resetting, transferring, seeding, or quiescing a device folder, for both ingress parsing and direct node execution.
+- Gateway shutdown reads the teardown scope from the durable placement, so stopping an attachment with no in-memory tunnel no longer reaches closed worktree admission.
+- A restored existing-folder create retry is owned by its frozen request; current device capacity or runtime no longer blocks it.
+- Attachments are refused for device-folder sessions before anything is persisted: `chat.send` rejects them with a clear message, New Session blocks Send while attachments are attached, and worker media preparation never restages historical attachments into a device folder, so one refused file cannot make later turns fail.
+- Security tradeoff: a session-host node already runs operator-directed agents with exec, so the allow-all default does not widen that boundary. The folder list is a selection guardrail, not an exec sandbox or a boundary against a compromised Gateway. Deployments that contain `operator.write` with `tools.fs.workspaceOnly` should also set a root list; the docs say so.
+- Control UI selection/path input, plus docs for node configuration, session hosting, operator scopes, and workspace behavior.
+
+## Screenshots
+
+Synthetic mocked-Gateway captures (no real paths or tokens).
+
+**Before — only the managed/new-workspace choice**
+
+![Before: no existing-device-folder option](https://github.com/user-attachments/assets/b9697664-c8ed-414f-95e3-e34f987051d8)
+
+**After — desktop existing-folder input**
+
+![After: existing folder on device, desktop](https://github.com/user-attachments/assets/b721aeec-7e23-495a-b454-d85d97af8c79)
+
+**After — mobile layout**
+
+![After: existing folder on device, mobile](https://github.com/user-attachments/assets/2f2ff9fe-0c1f-4a85-9db7-9a1d9a5e534b)
+
+## Evidence
+- **Cross-machine E2E on the final feature code:** a disposable Gateway on one Mac (tailnet TLS, token auth, QA mock model) and a session-host node on a second Mac, both on the same exact head, with `folders` unset and an existing non-Git target folder on the second Mac. Pairing and capability advertisement; create + explicit dispatch (`active`, workspace = the device folder); hosted exec wrote `pwd` and `hostname` into the folder, confirmed by independent readback on that Mac; node restart and an unclean Gateway restart, then a second turn appended to the same file; `~` and a Gateway-only path rejected; reclaim + delete left the folder, sentinel, and absence of `.git` unchanged with no copy in Gateway state.
+- **Isolated single-host E2E (25 checks, all pass):** missing/root/file/relative/private-storage rejections; auto-dispatch rejection; node restarts; clean Gateway shutdown with a live tunnel and with a durable attachment but no tunnel; Gateway restart and resume; symlink escape and outside-root rejection under a root list; `[]` disables the capability.
+- **Attachment refusal, live:** on the isolated Gateway, a `chat.send` with a text attachment to a device-folder session returns the refusal, the attachment never enters history, and the next text turn and later turns after node and Gateway restarts complete in the folder.
+- **Authority, live (real Gateway WebSocket, no mocks):** an operator client granted only `operator.read` + `operator.sessions.write` sends `sessions.create` with `deviceFolder` and gets `FORBIDDEN` / `missingScope: operator.write`; no session row exists afterwards and a debugger logpoint on the node records no workspace command for that request. The full `operator.write` client creates and dispatches the same folder (`active`).
+- **Device revocation during awaited admission, live:** with the node process tree stopped (`SIGSTOP`) while `sessions.create` and `sessions.dispatch` wait on it, `devices remove` succeeds, then `SIGCONT`. Create fails with `Selected device changed during folder validation; retry` and leaves no row; dispatch fails with `Device worker installation connection is no longer current`; the node is then disconnected and its old token is rejected. Known bounded behavior: the read-only folder validation request already delivered to the stopped node still runs once on resume (1 ms after removal) before the close frame arrives; its result is discarded, nothing is persisted, and no session command runs. Unit coverage also revokes the caller (real `captureGatewayDeviceRevocation` capture) and the device during validation.
+- **Requesting-operator revocation during awaited admission, live:** separate signed operator devices with `operator.write`, real paired node stopped with `SIGSTOP`. Removing the operator while `sessions.create` waits on folder validation: the client gets `gateway closed (4001): device removed`, `sessions.describe` returns `{""session"":null}`, the key is absent from `sessions.list`, and the node trace has no worker execution command. Removing a different operator while `sessions.dispatch` waits: the session moves from `provisioning` to `{""state"":""failed"",""terminalReason"":""Gateway requester authority changed""}`, `hasActiveRun` is false, and no worker command runs. As with device revocation, one already-delivered read-only folder validation runs on resume and its result is discarded.
+- **Inline initial turns are refused:** `sessions.create` with `deviceFolder` plus `message`, `task` or `attachments` is rejected before node I/O; the UI already sends the first message through `sessions.send` after dispatch. The three new cases fail with the validator removed (`3 failed | 12 passed`) and pass with it (`25 passed`).
+- **Upgrade compatibility, live:** the `main` merge-base build created a plain session and an explicit-cwd session (turn `ok`); the PR build on the same state dir lists and describes both with their original IDs, a new turn on the old session completes `ok`, and Doctor exits 0 with no session-row load errors.
+- **Upgrade from stable `v2026.10.3`, live:** the stable build created a plain session with a completed turn, an explicit-cwd session, a custom model alias and a non-default `thinkingDefault`. Direct startup on the new build exits 78 with ""uses schema version 24; … run openclaw doctor --fix"" on both this PR and the plain `main` merge base (inherited). After `openclaw doctor --fix --non-interactive` (`v24 -> v26`), the PR Gateway starts, both old sessions list and describe with their original IDs, both settings read back unchanged, a new turn on the old session returns `ok`, and a new device-folder session created after the upgrade dispatches and runs a turn in the folder. One session-event publication warning about an unsettled worker-environment mutation appeared during that dispatch; the turn still succeeded.
+- **Focused tests:** device-folder node, tunnel, create, protocol, media, submit-gate and draft-state suites pass; the restored-retry and history-restage regressions fail before their fixes.
+- **Hosted CI:** on the exact head `364a000`, every job passes on the first attempt, and so does the Security Review, except `checks-ui-e2e (8/9)`. That job runs `plugins-lifecycle.e2e.test.ts`, which also fails the same way on plain `main` (see the maintainer override comment). Earlier heads hit flaky qa-lab E2E tests and `main`-side ratchet failures that plain `main` also reproduces.
+
+## Merge Danger
+
+Additive optional protocol field and session-entry JSON field; no SQL schema change. Older Gateways reject the new `sessions.create` parameter; older nodes do not advertise the capability, so the option is not offered. Revert removes the feature; existing device-folder sessions would then be unrecognized but their folders are untouched.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/2c87e333990141e6aa433fd05f1a82f09fca8a5e
+openclaw/openclaw,b38587c3cf841a9b5a52cb2db5f3c8624f392b54,roboclaw-bot,RoboClaw,2026-10-14T03:25:20Z,2026-10-14T03:25:20Z,"fix(control-ui): load earlier messages when chat is underfilled (#171529)
+
+Restore visible settled-pane bootstrap pagination while preserving hidden-pane, programmatic placement, cursor-progress, and error-stop guards.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/b38587c3cf841a9b5a52cb2db5f3c8624f392b54
+openclaw/openclaw,14cda5639bab1db153ce542ffee5894905b6ab9f,roboclaw-bot,RoboClaw,2026-10-14T03:22:29Z,2026-10-14T03:22:29Z,"fix(ui): keep automation recovery prompts out of chat notices (#170799)
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/14cda5639bab1db153ce542ffee5894905b6ab9f
+openclaw/openclaw,c8bbfd3e524b0fd9a4d8aff451fe9ab79decc0c8,steipete,Peter Steinberger,2026-10-14T03:22:01Z,2026-10-14T03:22:01Z,perf(cron): retain committed job views after run completion (#171598),https://github.com/openclaw/openclaw/commit/c8bbfd3e524b0fd9a4d8aff451fe9ab79decc0c8
+openclaw/openclaw,51c881345d8e9e9d9edbb8f6b933f7b8b37967fa,obviyus,Ayaan Zaidi,2026-10-14T03:21:54Z,2026-10-14T03:21:54Z,"perf(plugins): avoid cloning payloads for metadata subscriptions (#171610)
+
+Related: #171534
+
+## What Problem This Solves
+
+Plugins that need tool IDs and phases still pay to clone large tool results when they subscribe to completion events.
+
+## User Impact
+
+Plugin authors can opt into metadata-only event delivery without copying tool output. Existing subscriptions retain full payloads by default. Opted-in handlers receive only own enumerable top-level `data` fields containing strings of at most 256 characters, numbers, booleans, or null; other values and accessors are omitted.
+
+## Why This Change Was Made
+
+The host filters metadata before cloning, rather than asking each plugin to discard a full clone. Stream/phase filtering and terminal run-context cleanup keep their existing behavior. This follows the phase-filter capability in #171534 and enables Advisor to observe tool settlement cheaply.
+
+## Evidence
+
+- Before the dispatch change, the new metadata snapshot regression failed while default and explicit full-payload cases passed.
+- `host-hooks.contract.test.ts`: 67 passed, including invalid payload-mode registration cases.
+- `agent-event-payload.contract.test.ts` and `run-context-lifecycle.contract.test.ts`: 29 passed. Getter-backed payloads remain unread for metadata handlers; primitive/length filtering, clone isolation, default full delivery, and terminal cleanup are covered.
+- Scoped Oxfmt and Oxlint passed.
+- `node scripts/run-tsgo.mjs -p tsconfig.core.json` passed.
+- Madge import-cycle check: 0 cycles.
+
+No whole-run performance percentage is claimed; the getter-based contract proves that metadata subscribers do not read or clone discarded payloads.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/51c881345d8e9e9d9edbb8f6b933f7b8b37967fa
+openclaw/openclaw,ee192100b3286541955b4ce5d0e1839fe1a18d49,steipete,Peter Steinberger,2026-10-14T03:21:23Z,2026-10-14T03:21:23Z,"fix(ci): degrade Security Review CI job pages on GitHub 5xx (#171583)
+
+GitHub can persistently fail a 100-job page of a CI attempt with a slow
+502 while smaller pages of the same range succeed. The shared client's
+in-request 5xx retries then exhaust the 30-second read deadline, and
+recovery restarts against the same URL until the budget runs out, leaving
+the combined openclaw/ci-gate status pending.
+
+List attempt jobs at 100, then 50, then 25 per page. Above the floor, a
+5xx skips in-request retries and the same offset range is requested
+again at half size. The 25-job floor keeps the normal read retries,
+deadline, and recovery restarts; read timeouts still restart the full
+evaluation with fresh authority, and enumeration must still reach the
+reported total.",https://github.com/openclaw/openclaw/commit/ee192100b3286541955b4ce5d0e1839fe1a18d49
+openclaw/openclaw,23e106f8e38bbd3c9843f1b65e738db9261f8d35,TUARAN,TUARAN,2026-10-14T03:20:34Z,2026-10-14T03:20:34Z,"fix: avoid duplicate deferred tool results (#169537)
+
+fix(tool-search): send deferred tool results to the model once
+
+When the model called a deferred tool through Tool Search, the tool's structured result was serialized twice into the model context. This wasted tokens and the truncation budget. Deferred results now include the payload once, like direct tool calls.
+
+Proof: built CLI with a recording provider. The deferred call's result payload appeared twice on main and once with this change; the direct-call control is once on both. A live openai/gpt-5.4-mini turn searched for and called sessions_list successfully.
+
+Fixes #169492. Thanks @TUARAN.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/23e106f8e38bbd3c9843f1b65e738db9261f8d35
+openclaw/openclaw,f70a8fbc1bfa158f08e6fd60acd78f1114b0293b,zhangguiping-xydt,xingzhou,2026-10-14T03:18:39Z,2026-10-14T03:18:39Z,"fix(cli): global flags missing from subcommand completion (#171571)
+
+fix(completion): offer global flags after subcommands
+
+Global CLI flags such as --profile work after a subcommand (`openclaw status --profile demo`), but shell completion only offered the subcommand's own options, so `openclaw status --pr<TAB>` suggested nothing. Bash and zsh completion now include the visible global flags at every command level. Command-local options keep precedence, and hidden flags stay hidden.
+
+Proof: built CLI, `openclaw completion --shell bash` sourced in bash with COMP_WORDS=(openclaw status --pr). On main COMPREPLY has no --profile; with this change it offers --profile after both `status` and `config get`. The local --json control is unchanged. Zsh is checked by comparing the generated scripts.
+
+Thanks @zhangguiping-xydt.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/f70a8fbc1bfa158f08e6fd60acd78f1114b0293b
+openclaw/openclaw,ea6c8fe1963e485bf0a6f2d9b503b1cd399ccdcd,steipete,Peter Steinberger,2026-10-14T03:16:41Z,2026-10-14T03:16:41Z,fix(ui): prevent incomplete usage exports (#171613),https://github.com/openclaw/openclaw/commit/ea6c8fe1963e485bf0a6f2d9b503b1cd399ccdcd
+openclaw/openclaw,43b0c022b8414d850f81c56e5e8ec90f96689fb5,zhangguiping-xydt,xingzhou,2026-10-14T03:14:29Z,2026-10-14T03:14:29Z,"fix(shell-env): unblock PATH discovery when login startup ignores termination (#169507)
+
+fix(shell-env): stop login-shell PATH discovery from hanging when the shell ignores SIGTERM
+
+If the user's login shell startup ignored SIGTERM (for example a profile that traps TERM and loops), login-shell PATH discovery never finished: the probe passed its deadline, but the shell stayed alive and the waiting request hung. On timeout, the probe now force-stops its own process group, so discovery falls back on time. Other processes, including the Gateway, are not affected.
+
+Proof: built Gateway with a login shell whose profile ignores TERM, called through the shipped sessions.catalog.list RPC. On main the call ran past the 22-second client timeout and the shell stayed alive. With this change the call returns after about 15 seconds, the probe shell and its child are gone, and the Gateway and an unrelated sentinel process keep running. Normal profiles behave the same on both.
+
+Thanks @zhangguiping-xydt.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/43b0c022b8414d850f81c56e5e8ec90f96689fb5
+openclaw/openclaw,2c130c7039f2f50342fbd95ac36ab5cc064d9a00,steipete,Peter Steinberger,2026-10-14T03:11:48Z,2026-10-14T03:11:48Z,"fix(desktop): reclaim unused runtime seeds after healthy activation (#171489)
+
+* fix(desktop): reclaim unused runtime seeds after healthy activation
+
+* fix(desktop): retain pinned rollback runtime behind service wrappers
+
+* test(desktop): encode seed fixture digests with supported formatting
+
+* test(desktop): isolate runtime retention process probes",https://github.com/openclaw/openclaw/commit/2c130c7039f2f50342fbd95ac36ab5cc064d9a00
+openclaw/openclaw,794ae696f11b7ee105180de2f4dbe369affc42b2,steipete,Peter Steinberger,2026-10-14T03:09:45Z,2026-10-14T03:09:45Z,perf(agents): retain encoded session fork payloads (#171597),https://github.com/openclaw/openclaw/commit/794ae696f11b7ee105180de2f4dbe369affc42b2
+openclaw/openclaw,8efce5486edfdbc3d66596968b14e302123a9aba,steipete,Peter Steinberger,2026-10-14T03:09:42Z,2026-10-14T03:09:42Z,"docs: explain Codex setup, linked Gateways, and Team access for MCP Relay (#171575)
+
+* docs(mcp-relay): document Codex setup, linked Gateways, and Team grants
+
+* docs(security): describe tokenless ingress browsers in network exposure",https://github.com/openclaw/openclaw/commit/8efce5486edfdbc3d66596968b14e302123a9aba
+openclaw/openclaw,120e515260d7b029f5f70c3d98fa372ccabf91f7,steipete,Peter Steinberger,2026-10-14T03:09:22Z,2026-10-14T03:09:22Z,perf(models): refresh auth status after prepared publication (#171579),https://github.com/openclaw/openclaw/commit/120e515260d7b029f5f70c3d98fa372ccabf91f7
+openclaw/openclaw,b52c0c24205b00f698d8cbb7d14bb70644e5f30a,steipete,Peter Steinberger,2026-10-14T03:07:58Z,2026-10-14T03:07:58Z,perf(worktrees): reuse branch inventories with large pack directories (#171604),https://github.com/openclaw/openclaw/commit/b52c0c24205b00f698d8cbb7d14bb70644e5f30a
+openclaw/openclaw,810fe74a44c82f4cae2fa8b370d251d97ac92060,steipete,Peter Steinberger,2026-10-14T03:07:05Z,2026-10-14T03:07:05Z,perf(approvals): avoid unrelated writer waits during session replay (#171605),https://github.com/openclaw/openclaw/commit/810fe74a44c82f4cae2fa8b370d251d97ac92060
+openclaw/openclaw,3ed952999701c039289d6209e0ea22412e22a48e,steipete,Peter Steinberger,2026-10-14T03:06:42Z,2026-10-14T03:06:42Z,"perf(github): avoid redundant cached preview credential reads (#171603)
+
+Keep live credential validation at dispatch and delivery, and log slow preview phase durations without URLs or content. Preserve stale background refresh and the existing upstream deadline.",https://github.com/openclaw/openclaw/commit/3ed952999701c039289d6209e0ea22412e22a48e
+openclaw/openclaw,f36667c0b167e20b3704cb644055bd463529413b,roboclaw-bot,RoboClaw,2026-10-14T03:04:51Z,2026-10-14T03:04:51Z,"fix: show attached work without empty Details expanders (#171533)
+
+* fix: show attached work without empty Details expanders
+
+Worked on by:
+- @steipete
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+OpenClaw-Publication: f1c91ef9-ac7e-45ca-9a80-d528a9bc4deb
+
+* test(ui): align Details flows with automatic expansion
+
+Keep empty-state setup independent of populated pull-request groups and retain keyboard-only CI popover coverage.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+* fix(ui): keep Details PR links clear of CI controls
+
+Retain independent hit areas for PR links and CI controls; align asynchronous discovery tests with auto-expanded populated groups.
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>
+
+---------
+
+Co-authored-by: steipete <58493+steipete@users.noreply.github.com>",https://github.com/openclaw/openclaw/commit/f36667c0b167e20b3704cb644055bd463529413b
+openclaw/openclaw,f125842fe77691e619755a97d47706cf1991704b,steipete,Peter Steinberger,2026-10-14T03:03:44Z,2026-10-14T03:03:44Z,"fix(workboard): keep chat catalog reads out of card history (#171135)
+
+* fix(workboard): keep chat catalog reads out of card history
+
+* fix(workboard): preserve session link identity and catalog retries
+
+* test(workboard): respect PostgreSQL snapshot revision receipts
+
+* fix(workboard): skip unchanged catalog summary events
+
+* refactor(workboard): share session comparison normalization
+
+* chore(workboard): register shared session comparison owner
+
+* build(workboard): refresh generated browser asset metadata
+
+* test(workboard): follow summary refreshes while editing
+
+* fix(database): keep read-only snapshots from invalidating cards
+
+* refactor(workboard): isolate shared session comparison
+
+* fix(ui): resolve shared session comparison source",https://github.com/openclaw/openclaw/commit/f125842fe77691e619755a97d47706cf1991704b
+openclaw/openclaw,f4f0255bc773d767c5ddc43a15e20202c8e33065,obviyus,Ayaan Zaidi,2026-10-14T03:01:38Z,2026-10-14T03:01:38Z,"fix(agents): keep in-flight tool calls pending in session forks (#171580)
+
+Related: #169564
+
+## What Problem This Solves
+
+Fixes read-only built-in session forks reporting a still-running tool call as aborted, which can make a background reviewer recommend repeating successful work.
+
+## User Impact
+
+A fork taken during tool execution now describes the result as pending, not as a tool error. Parent execution and persisted results are unchanged. Ordinary `/btw` and normal-run transcript repair keep their existing behavior.
+
+## Why This Change Was Made
+
+The built-in fork retains the last prepared request and appends subsequently published messages. When an assistant tool call has been published but its result has not, provider replay pairing repair inserts an error result (`aborted` for OpenAI Responses). The fork now supplies a non-error pending result only for those new, unmatched publications, before provider serialization. It keeps the actual prepared request prefix unchanged and never writes the placeholder back to the parent snapshot.
+
+Known limitation: Codex has its own upstream missing-result repair (`codex-rs/core/src/context_manager/normalize.rs:104-107`, `CustomToolCallOutput` with `output: ""aborted""`; function calls at lines 59-64). This PR does not rewrite native Codex tool outputs. Mid-call Codex forks remain subject to that upstream behavior; consumers should review at a settled boundary.
+
+## Evidence
+
+- Live evidence from Advisor #169564 at `1b75f3ab75f4e77a349387ef26f661e491ffa922`: six requested sequential `echo N; sleep 10` calls became ten actual executions after three false-abort corrections passed verification. All ten persisted tool results were successful. A captured verification request contained `function_call_output` with `output: ""aborted""` for the still-running third call.
+- Root cause: `packages/ai/src/transcript-transform.ts:154-170` synthesizes the error while replaying the fork, not in the parent's persisted transcript or its original prepared request. The assistant publication is appended by `src/agents/embedded-agent-subscribe.handlers.ts:82-91`.
+- Regression covers synchronous and asynchronous pending calls through the real OpenAI Responses and Anthropic transports, and verifies a later fork sees the genuine completed result instead of retaining the placeholder. All four cases failed before the fix for the intended missing-pending-result reason.
+- Focused tests: **26 passed across 3 files** (13 fork boundary tests, 2 tool-ID preservation tests, 11 replay sanitization tests).
+- Scoped TypeScript project, changed-file oxlint and oxfmt checks passed; `check:madge-import-cycles` reported **0 cycles**. No full typecheck, broad suite, `check-changed`, or autoreview was run.
+- Live re-proof: cherry-picked onto the Advisor head as `b31c3fcf879eda6cf23c3b409b6d548571b7b78e` (local only), retaining its old tool-start scheduler. The identical six-command built-in case completed with **exactly 6 successful exec calls**. Reviews during calls 3 and 6 both returned **NO_CHANGE** (3013 ms and 1982 ms); no verification or steering occurred. Both captured fork input arrays contain the pending call's result as `This tool call is still running. Its result is not available yet.`, with no `aborted` tool output. All six genuine persisted results are successful and the parent transcript contains no pending placeholders. Gateway and isolated temporary state were cleaned up.
+
+Co-authored-by: Ayaan Zaidi <hi@obviy.us>",https://github.com/openclaw/openclaw/commit/f4f0255bc773d767c5ddc43a15e20202c8e33065
+openclaw/openclaw,72ccf6ff92931fff2d49473fe1571f39e8311ad2,steipete,Peter Steinberger,2026-10-14T02:49:38Z,2026-10-14T02:49:41Z,fix(ui): use Solid class contract for panel errors,https://github.com/openclaw/openclaw/commit/72ccf6ff92931fff2d49473fe1571f39e8311ad2

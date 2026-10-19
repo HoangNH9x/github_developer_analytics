@@ -1,0 +1,4 @@
+﻿activity_type,raw_rows,unique_rows_after_dedup,duplicate_rows_in_raw,rows_missing_key,rows_in_research_period,rows_with_invalid_date,rows_before_period,rows_after_period,oldest_date_in_source,newest_date_in_source
+Commits,21646,21646,0,0,21646,0,0,0,2024-05-30 14:59:22+00:00,2026-10-14 04:50:26+00:00
+Issues,119622,119622,0,0,119622,0,0,0,2020-04-14 03:13:20+00:00,2026-10-18 13:20:25+00:00
+Pull Requests,222876,222876,0,0,222876,0,0,0,2020-02-28 21:36:41+00:00,2026-10-18 13:08:37+00:00

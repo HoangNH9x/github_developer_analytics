@@ -1,0 +1,11 @@
+repository,owner,stars,forks,open_issues,language,created_at,updated_at
+react/react,react,250863,51426,1406,JavaScript,2013-05-24T16:15:54Z,2026-10-03T07:10:16Z
+vuejs/vue,vuejs,212828,33715,640,TypeScript,2013-07-29T03:24:51Z,2026-10-02T19:55:29Z
+angular/angular,angular,101014,29177,1142,TypeScript,2014-09-18T16:12:01Z,2026-10-03T07:09:16Z
+vercel/next.js,vercel,143025,33713,3532,JavaScript,2016-10-05T23:32:51Z,2026-10-03T07:11:25Z
+django/django,django,91221,36051,525,Python,2012-04-28T02:47:18Z,2026-10-03T07:07:23Z
+pallets/flask,pallets,74797,17038,4,Python,2010-04-06T11:11:59Z,2026-10-03T05:59:25Z
+pytorch/pytorch,pytorch,103634,31176,17579,Python,2016-08-13T05:26:41Z,2026-10-03T07:06:59Z
+tensorflow/tensorflow,tensorflow,200672,78134,3243,C++,2015-11-07T01:19:20Z,2026-10-03T07:06:01Z
+microsoft/vscode,microsoft,193374,44124,21344,TypeScript,2015-09-03T20:23:38Z,2026-10-03T07:09:26Z
+kubernetes/kubernetes,kubernetes,128168,45854,3166,Go,2014-06-06T22:56:04Z,2026-10-03T05:55:51Z

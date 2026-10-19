@@ -1,0 +1,188 @@
+﻿month,records,table
+2024-05,3,Commits
+2024-06,7,Commits
+2024-07,95,Commits
+2024-08,1,Commits
+2024-10,8,Commits
+2024-11,2,Commits
+2024-12,23,Commits
+2025-01,1,Commits
+2025-02,2,Commits
+2025-03,7,Commits
+2025-04,6,Commits
+2025-05,4,Commits
+2025-08,14,Commits
+2025-09,25,Commits
+2025-10,125,Commits
+2025-11,110,Commits
+2025-12,43,Commits
+2026-01,149,Commits
+2026-02,430,Commits
+2026-03,720,Commits
+2026-04,600,Commits
+2026-05,560,Commits
+2026-06,447,Commits
+2026-07,1136,Commits
+2026-08,580,Commits
+2026-09,4258,Commits
+2026-10,12290,Commits
+2020-04,4,Issues
+2020-05,4,Issues
+2020-06,11,Issues
+2020-07,28,Issues
+2020-08,42,Issues
+2020-09,18,Issues
+2020-10,30,Issues
+2020-11,51,Issues
+2020-12,42,Issues
+2021-01,109,Issues
+2021-02,90,Issues
+2021-03,54,Issues
+2021-04,53,Issues
+2021-05,83,Issues
+2021-06,73,Issues
+2021-07,110,Issues
+2021-08,93,Issues
+2021-09,80,Issues
+2021-10,97,Issues
+2021-11,73,Issues
+2021-12,80,Issues
+2022-01,151,Issues
+2022-02,186,Issues
+2022-03,100,Issues
+2022-04,158,Issues
+2022-05,139,Issues
+2022-06,110,Issues
+2022-07,108,Issues
+2022-08,159,Issues
+2022-09,146,Issues
+2022-10,131,Issues
+2022-11,153,Issues
+2022-12,186,Issues
+2023-01,216,Issues
+2023-02,284,Issues
+2023-03,701,Issues
+2023-04,545,Issues
+2023-05,543,Issues
+2023-06,861,Issues
+2023-07,700,Issues
+2023-08,584,Issues
+2023-09,520,Issues
+2023-10,581,Issues
+2023-11,810,Issues
+2023-12,593,Issues
+2024-01,653,Issues
+2024-02,610,Issues
+2024-03,737,Issues
+2024-04,879,Issues
+2024-05,893,Issues
+2024-06,695,Issues
+2024-07,812,Issues
+2024-08,1015,Issues
+2024-09,937,Issues
+2024-10,1048,Issues
+2024-11,1141,Issues
+2024-12,1172,Issues
+2025-01,1337,Issues
+2025-02,1590,Issues
+2025-03,1898,Issues
+2025-04,1811,Issues
+2025-05,1813,Issues
+2025-06,1717,Issues
+2025-07,1589,Issues
+2025-08,1695,Issues
+2025-09,1872,Issues
+2025-10,1836,Issues
+2025-11,2011,Issues
+2025-12,2273,Issues
+2026-01,2308,Issues
+2026-02,2029,Issues
+2026-03,3372,Issues
+2026-04,3894,Issues
+2026-05,3661,Issues
+2026-06,3719,Issues
+2026-07,4694,Issues
+2026-08,11183,Issues
+2026-09,18227,Issues
+2026-10,24611,Issues
+2020-02,1,Pull Requests
+2020-03,12,Pull Requests
+2020-04,10,Pull Requests
+2020-05,8,Pull Requests
+2020-06,49,Pull Requests
+2020-07,160,Pull Requests
+2020-08,131,Pull Requests
+2020-09,94,Pull Requests
+2020-10,239,Pull Requests
+2020-11,186,Pull Requests
+2020-12,102,Pull Requests
+2021-01,104,Pull Requests
+2021-02,115,Pull Requests
+2021-03,97,Pull Requests
+2021-04,78,Pull Requests
+2021-05,87,Pull Requests
+2021-06,107,Pull Requests
+2021-07,199,Pull Requests
+2021-08,133,Pull Requests
+2021-09,156,Pull Requests
+2021-10,178,Pull Requests
+2021-11,151,Pull Requests
+2021-12,123,Pull Requests
+2022-01,180,Pull Requests
+2022-02,199,Pull Requests
+2022-03,236,Pull Requests
+2022-04,340,Pull Requests
+2022-05,447,Pull Requests
+2022-06,256,Pull Requests
+2022-07,510,Pull Requests
+2022-08,388,Pull Requests
+2022-09,309,Pull Requests
+2022-10,356,Pull Requests
+2022-11,409,Pull Requests
+2022-12,659,Pull Requests
+2023-01,702,Pull Requests
+2023-02,721,Pull Requests
+2023-03,1388,Pull Requests
+2023-04,1140,Pull Requests
+2023-05,1114,Pull Requests
+2023-06,1151,Pull Requests
+2023-07,1309,Pull Requests
+2023-08,1120,Pull Requests
+2023-09,792,Pull Requests
+2023-10,1090,Pull Requests
+2023-11,950,Pull Requests
+2023-12,868,Pull Requests
+2024-01,1173,Pull Requests
+2024-02,994,Pull Requests
+2024-03,1494,Pull Requests
+2024-04,1397,Pull Requests
+2024-05,1436,Pull Requests
+2024-06,1508,Pull Requests
+2024-07,1274,Pull Requests
+2024-08,1251,Pull Requests
+2024-09,1357,Pull Requests
+2024-10,1331,Pull Requests
+2024-11,1231,Pull Requests
+2024-12,1344,Pull Requests
+2025-01,1775,Pull Requests
+2025-02,1818,Pull Requests
+2025-03,2454,Pull Requests
+2025-04,2189,Pull Requests
+2025-05,2312,Pull Requests
+2025-06,2056,Pull Requests
+2025-07,1984,Pull Requests
+2025-08,2178,Pull Requests
+2025-09,2348,Pull Requests
+2025-10,2434,Pull Requests
+2025-11,2493,Pull Requests
+2025-12,2399,Pull Requests
+2026-01,3043,Pull Requests
+2026-02,3765,Pull Requests
+2026-03,6298,Pull Requests
+2026-04,6767,Pull Requests
+2026-05,7431,Pull Requests
+2026-06,7819,Pull Requests
+2026-07,12686,Pull Requests
+2026-08,18655,Pull Requests
+2026-09,34235,Pull Requests
+2026-10,60793,Pull Requests

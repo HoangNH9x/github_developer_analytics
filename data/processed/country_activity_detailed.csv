@@ -1,0 +1,48 @@
+﻿activity_type,country_group,country_or_region,records,unique_authors,repositories
+Commits,International,Australia,56,4,4
+Commits,International,Brazil,1,1,1
+Commits,International,Canada,172,3,2
+Commits,International,China,1303,19,7
+Commits,International,France,3,1,1
+Commits,International,Germany,5,1,1
+Commits,International,Hong Kong,5,1,2
+Commits,International,India,83,6,5
+Commits,International,Poland,4,2,2
+Commits,International,Singapore,33,2,2
+Commits,International,United States,3314,16,7
+Commits,No Author Login,No Author Login,485,0,11
+Commits,Non-user account,Non-user account,333,10,12
+Commits,Unprofiled,Unprofiled,2681,1232,25
+Commits,Unresolved location,Unresolved location,13168,209,26
+Issues,International,Australia,61,19,31
+Issues,International,Brazil,126,16,17
+Issues,International,Canada,227,29,33
+Issues,International,China,935,167,189
+Issues,International,France,254,27,29
+Issues,International,Germany,266,51,66
+Issues,International,Hong Kong,9,6,6
+Issues,International,India,468,58,87
+Issues,International,Poland,26,9,11
+Issues,International,Singapore,291,13,41
+Issues,International,United Kingdom,181,17,62
+Issues,International,United States,3489,128,142
+Issues,Non-user account,Non-user account,897,15,95
+Issues,Unprofiled,Unprofiled,98192,74427,912
+Issues,Unresolved location,Unresolved location,14093,2300,832
+Issues,Vietnam,Vietnam,107,38,46
+Pull Requests,International,Australia,355,23,52
+Pull Requests,International,Brazil,767,24,25
+Pull Requests,International,Canada,1809,44,93
+Pull Requests,International,China,5497,203,320
+Pull Requests,International,France,1732,49,81
+Pull Requests,International,Germany,2614,65,85
+Pull Requests,International,Hong Kong,601,11,38
+Pull Requests,International,India,2164,109,196
+Pull Requests,International,Poland,474,15,32
+Pull Requests,International,Singapore,1218,20,130
+Pull Requests,International,United Kingdom,1096,27,128
+Pull Requests,International,United States,8756,191,345
+Pull Requests,Non-user account,Non-user account,18415,55,424
+Pull Requests,Unprofiled,Unprofiled,109070,59620,936
+Pull Requests,Unresolved location,Unresolved location,67865,2398,902
+Pull Requests,Vietnam,Vietnam,443,60,68
