@@ -43,6 +43,7 @@ Sau khi chạy xong, kiểm tra:
 - `data/processed/canonical/monthly_activity.csv`
 - `data/processed/canonical/developer_activity_summary.csv`
 - `data/processed/canonical/deduplication_audit.csv`
+- `data/processed/canonical/collection_errors.csv`
 - `data/processed/canonical/data_quality_report.csv`
 
 **Không xóa checkpoint trong lúc crawl.** Khi một repository có trạng thái COMPLETE/ZERO_CONFIRMED cho cả ba metric và cùng khoảng ngày, lần chạy sau sẽ bỏ qua repo đó. Các metric PARTIAL/ERROR sẽ được thử lại.
