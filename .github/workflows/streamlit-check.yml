@@ -42,8 +42,9 @@ jobs:
           pages = [
               "Tổng quan dữ liệu",
               "Tổng hợp theo Repository",
+              "So sánh Repository theo quốc gia",
               "So sánh Việt Nam – quốc tế",
-              "Phân bố theo quốc gia",
+              "Hoạt động theo quốc gia tác giả",
               "Độ phủ dữ liệu",
               "Phương pháp & câu hỏi",
           ]
