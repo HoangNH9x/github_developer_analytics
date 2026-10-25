@@ -12,8 +12,8 @@ Thiết kế một lần crawl có thể tái chạy, có checkpoint, và có th
 | Repository metadata | `GET /repos/{owner}/{repo}` | `repository_id`, stars, forks, language, created_at, owner, URL | Stars/Forks là snapshot lúc lấy |
 | Owner profile | `GET /users/{username}` hoặc `GET /orgs/{org}` | Public location, type, profile metadata | Location tự khai báo, có thể null/không rõ |
 | Commit list | `GET /repos/{owner}/{repo}/commits?since=...&until=...&per_page=100&page=...` | Commit records trong cửa sổ thời gian | Dùng `Link` header để đi hết trang; lưu SHA để chống trùng |
-| Issue search | `GET /search/issues?q=repo:OWNER/REPO is:issue created:START..END` | Issue tạo trong khoảng ngày | Điều kiện `is:issue` loại PR; search giới hạn 1.000 kết quả/query |
-| PR search | `GET /search/issues?q=repo:OWNER/REPO is:pr created:START..END` | Pull request tạo trong khoảng ngày | PR được lưu riêng; không gộp vào issue-only count |
+| Issues + Pull Requests | `GET /repos/{owner}/{repo}/issues?state=all&since=...` | Lấy một luồng record gồm Issues và PR | Phân biệt PR qua trường `pull_request`; `since` lọc theo `updated_at`, sau đó lọc chính xác `created_at` tại máy; `per_page=100` và phân trang theo `Link` |
+| Search API (fallback/discovery) | `GET /search/issues?q=repo:OWNER/REPO is:issue/pr created:START..END` | Chỉ dùng khi cần xác minh hoặc làm fallback có kiểm soát | Search giới hạn 1.000 kết quả/query và có rate bucket riêng; không dùng làm đường chính cho mọi repo |
 
 Tài liệu chính thức:
 - Search API: https://docs.github.com/en/rest/search/search
@@ -39,7 +39,7 @@ Token chỉ lưu ở file local `.env` không được commit hoặc chia sẻ t
 
 1. Ưu tiên đọc `Link` response header để tìm trang tiếp theo/cuối. Không tự giả định luôn có số trang cuối.
 2. Với commits và endpoints hỗ trợ pagination, dùng `per_page=100` và tiếp tục cho đến khi không còn trang hoặc không có record mới.
-3. Với Search API, chia cửa sổ `created:` thành khoảng con khi query chạm giới hạn kết quả, có `incomplete_results=true`, hoặc API báo lỗi. Nếu cửa sổ nhỏ nhất vẫn bị giới hạn, đánh dấu `PARTIAL`; không khẳng định count chính xác.
+3. Đường chính cho Issues/PR là endpoint repository Issues, lấy một luồng phân trang duy nhất rồi tách theo trường `pull_request`; điều này tránh nhiều truy vấn Search lặp lại trên từng khoảng ngày. Vì `since` lọc theo `updated_at`, bắt đầu trước ngày nghiên cứu một giây và lọc `created_at` chính xác tại máy. Search API chỉ là phương án fallback có kiểm soát vì có giới hạn số kết quả/query.
 4. Khi nhận 403/429 do rate limit, tuân thủ `Retry-After`, `X-RateLimit-Reset` và exponential backoff theo response. Không retry liên tục gây thêm hạn chế.
 5. Sau mỗi repository, ghi checkpoint gồm `repository_id`, metric đã hoàn tất, trạng thái, lần thử gần nhất, khoảng ngày và lỗi gần nhất.
 6. Resume chỉ tái sử dụng kết quả hoàn tất nếu cùng sample, cùng khoảng ngày, cùng phương pháp và cùng phiên bản pipeline; nếu không thì phải làm mới metric bị ảnh hưởng.
