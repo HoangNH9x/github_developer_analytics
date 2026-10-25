@@ -20,9 +20,9 @@ st.sidebar.title("GitHub Developer Analytics")
 st.sidebar.caption("Assignment 1 → Assignment 2")
 page = st.sidebar.radio(
     "Chọn nội dung",
-    ["Tổng quan dữ liệu", "So sánh Việt Nam – quốc tế", "Phân bố theo quốc gia", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
+    ["Tổng quan dữ liệu", "Tổng hợp theo Repository", "So sánh Việt Nam – quốc tế", "Phân bố theo quốc gia", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
     index=0,
-    key="navigation_v3",
+    key="navigation_final_v1",
 )
 st.sidebar.divider()
 st.sidebar.caption("Nguồn: CSV trong data/processed. Ứng dụng chỉ đọc dữ liệu, không gọi GitHub API.")
@@ -360,8 +360,8 @@ elif page == "Độ phủ dữ liệu":
             st.dataframe(out, width="stretch", hide_index=True)
     st.info("Location là thông tin tự khai báo. Không trùng khóa trong CSV không đồng nghĩa đã thu thập đầy đủ toàn bộ lịch sử.")
 
-# PAGE 4: methods
-else:
+# PAGE 5: methods
+elif page == "Phương pháp & câu hỏi":
     st.header("5. Phương pháp và câu hỏi nghiên cứu")
     st.subheader("Quy trình từ Giai đoạn 1 đến Giai đoạn 2")
     st.markdown("""
@@ -385,6 +385,107 @@ else:
     - Commits hiện quan sát từ năm 2024, không phủ toàn bộ giai đoạn mục tiêu từ năm 2020.
     - Số bản ghi hoạt động không đồng nghĩa số developer duy nhất.
     """)
+
+# PAGE 2: repository-centric summary
+elif page == "Tổng hợp theo Repository":
+    st.header("2. Tổng hợp theo Repository")
+    st.caption("Mỗi dòng tương ứng một repository. Commits, Issues và Pull Requests được đếm riêng rồi ghép vào bảng metadata repository.")
+    summary = read_csv("repository_summary.csv")
+    if summary.empty:
+        st.error("Chưa đọc được repository_summary.csv trong data/processed. Kiểm tra file ở nhánh streamlit-final-dashboard.")
+    else:
+        # Keep the repository grain explicit and prevent accidental fan-out.
+        if "repo_id" in summary.columns:
+            summary["repo_id"] = summary["repo_id"].astype("string")
+        for col in ["stars", "forks", "open_issues", "commits_observed_count", "issues_observed_count", "pull_requests_observed_count"]:
+            if col in summary.columns:
+                summary[col] = to_num(summary[col]).astype("int64")
+        if "full_name" in summary.columns:
+            summary = summary.drop_duplicates(subset=["repo_id"] if "repo_id" in summary.columns else ["full_name"], keep="first")
+        commits_col = "commits_observed_count"
+        issues_col = "issues_observed_count"
+        prs_col = "pull_requests_observed_count"
+        kpi = st.columns(4)
+        kpi[0].metric("Repositories", f"{summary['repo_id'].nunique() if 'repo_id' in summary.columns else summary['full_name'].nunique():,}")
+        kpi[1].metric("Commits quan sát", f"{int(summary[commits_col].sum()):,}")
+        kpi[2].metric("Issues quan sát", f"{int(summary[issues_col].sum()):,}")
+        kpi[3].metric("Pull Requests quan sát", f"{int(summary[prs_col].sum()):,}")
+        st.warning("Các count là số dòng đã có trong CSV. Nhiều repository còn Partial/Pending; count bằng 0 ở trạng thái chưa hoàn tất không có nghĩa repository thật sự không có hoạt động.")
+        st.subheader("Tìm kiếm và lọc repository")
+        f1, f2, f3, f4 = st.columns([2.0, 1.1, 1.0, 1.2])
+        with f1:
+            search = st.text_input("Tên repository hoặc owner", placeholder="Ví dụ: openclaw/openclaw")
+        with f2:
+            langs = ["Tất cả"] + sorted(summary["language"].fillna("Unknown").astype(str).replace("", "Unknown").unique().tolist()) if "language" in summary.columns else ["Tất cả"]
+            lang_filter = st.selectbox("Ngôn ngữ", langs)
+        with f3:
+            sort_metric = st.selectbox("Sắp xếp theo", ["stars", "forks", "commits_observed_count", "issues_observed_count", "pull_requests_observed_count"], format_func=lambda v: {"stars":"Stars", "forks":"Forks", "commits_observed_count":"Commits", "issues_observed_count":"Issues", "pull_requests_observed_count":"Pull Requests"}[v])
+        with f4:
+            min_stars = st.number_input("Stars tối thiểu", min_value=0, max_value=int(summary["stars"].max()) if "stars" in summary.columns and not summary.empty else 0, value=0, step=100)
+        view = summary.copy()
+        if search:
+            name_series = view.get("full_name", pd.Series("", index=view.index)).fillna("").astype(str)
+            owner_series = view.get("owner_login", pd.Series("", index=view.index)).fillna("").astype(str)
+            view = view[name_series.str.contains(search, case=False, regex=False) | owner_series.str.contains(search, case=False, regex=False)]
+        if lang_filter != "Tất cả" and "language" in view.columns:
+            view = view[view["language"].fillna("Unknown").astype(str).replace("", "Unknown") == lang_filter]
+        if "stars" in view.columns:
+            view = view[view["stars"] >= min_stars]
+        view = view.sort_values(sort_metric, ascending=False, na_position="last")
+        st.caption(f"Đang hiển thị {len(view):,} / {len(summary):,} repository")
+        table_cols = [c for c in [
+            "repo_id", "full_name", "owner_login", "owner_type", "language", "stars", "forks", "open_issues",
+            "commits_observed_count", "commits_collection_status", "issues_observed_count", "issues_collection_status",
+            "pull_requests_observed_count", "pull_requests_collection_status", "created_at", "updated_at", "html_url"
+        ] if c in view.columns]
+        st.dataframe(view[table_cols], width="stretch", hide_index=True, height=470,
+                     column_config={"html_url": st.column_config.LinkColumn("Repository URL")})
+        st.download_button("Tải bảng tổng hợp đã lọc (CSV)", data=view[table_cols].to_csv(index=False).encode("utf-8-sig"),
+                           file_name="repository_summary_filtered.csv", mime="text/csv")
+        st.subheader("Hoạt động theo repository")
+        m1, m2 = st.columns([1, 2])
+        with m1:
+            activity_metric = st.selectbox("Chỉ số hoạt động", ["commits_observed_count", "issues_observed_count", "pull_requests_observed_count"],
+                format_func=lambda v: {"commits_observed_count":"Commits quan sát", "issues_observed_count":"Issues quan sát", "pull_requests_observed_count":"Pull Requests quan sát"}[v])
+            top_n = st.slider("Số repository trên biểu đồ", min_value=10, max_value=50, value=20, step=5)
+        status_col = {"commits_observed_count":"commits_collection_status", "issues_observed_count":"issues_collection_status", "pull_requests_observed_count":"pull_requests_collection_status"}[activity_metric]
+        with m2:
+            top = view.sort_values(activity_metric, ascending=False).head(top_n).copy()
+            if not top.empty:
+                fig = px.bar(top.sort_values(activity_metric), x=activity_metric, y="full_name", orientation="h",
+                    color=status_col if status_col in top.columns else None, hover_data=[c for c in ["stars", "forks", "language", "owner_login"] if c in top.columns],
+                    title="Top repository theo số bản ghi đã thu thập")
+                fig.update_layout(height=max(450, 26 * len(top) + 100), margin=dict(l=5, r=20, t=55, b=5), xaxis_title="Số bản ghi", yaxis_title="")
+                st.plotly_chart(fig, width="stretch")
+        st.subheader("Giai đoạn 1 và Giai đoạn 2 — kiểm kê bản ghi")
+        stage1_files = {"Repositories":"repositories.csv", "Commits":"commits.csv", "Issues":"issues.csv"}
+        stage1_counts = {}
+        for label, filename in stage1_files.items():
+            path = ROOT / "Ass_GD1" / filename
+            if path.is_file():
+                try:
+                    stage1_counts[label] = len(pd.read_csv(path, low_memory=False, encoding="utf-8-sig"))
+                except Exception:
+                    stage1_counts[label] = None
+            else:
+                stage1_counts[label] = None
+        stage2_counts = {
+            "Repositories": int(summary["repo_id"].nunique()) if "repo_id" in summary.columns else len(summary),
+            "Commits": int(summary[commits_col].sum()),
+            "Issues": int(summary[issues_col].sum()),
+            "Pull Requests": int(summary[prs_col].sum()),
+        }
+        comp_rows = []
+        for label in ["Repositories", "Commits", "Issues", "Pull Requests"]:
+            old_count = stage1_counts.get(label)
+            comp_rows.append({
+                "Dataset": label,
+                "Giai đoạn 1 - số dòng CSV": f"{old_count:,}" if old_count is not None else "Không có file",
+                "Giai đoạn 2 - số dòng quan sát": f"{stage2_counts[label]:,}",
+                "Ghi chú": "Pull Requests được bổ sung ở Giai đoạn 2" if label == "Pull Requests" else "Các số đếm phản ánh file CSV hiện có"
+            })
+        st.dataframe(pd.DataFrame(comp_rows), width="stretch", hide_index=True)
+        st.info("Bảng này giúp trình bày quy mô dữ liệu qua hai giai đoạn. Không dùng chênh lệch trực tiếp làm tăng trưởng nếu bộ dữ liệu hoặc quy tắc crawl giữa hai giai đoạn khác nhau.")
 
 st.divider()
 st.caption("GitHub Developer Analytics · Đối chiếu số liệu với các CSV audit trước khi nộp.")
