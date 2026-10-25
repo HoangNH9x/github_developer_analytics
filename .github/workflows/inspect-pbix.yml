@@ -16,5 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Inspect PBIX page and visual metadata
+      - name: Install Power BI model reader
+        run: python -m pip install pbixray
+      - name: Inspect PBIX report and semantic model
         run: python _review/inspect_pbix.py
