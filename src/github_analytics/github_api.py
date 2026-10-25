@@ -155,6 +155,63 @@ class GitHubClient:
     def _day_range(start: str, end: str) -> tuple[date, date]:
         return date.fromisoformat(start), date.fromisoformat(end)
 
+    def collect_issues_and_prs(
+        self, full_name: str, start: str, end: str
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str, str, str | None, str | None]:
+        """Fetch issues and PRs in one core REST pagination pass.
+
+        The repository Issues endpoint returns both issues and pull requests. PR
+        records are marked by a 'pull_request' key. Its 'since' parameter filters
+        by updated_at, not created_at; every item created on/after study_start must
+        also have updated_at on/after study_start, so we fetch from just before the
+        start boundary and apply the exact created_at window locally.
+        """
+        try:
+            start_date = date.fromisoformat(start)
+            end_date = date.fromisoformat(end)
+            since_day = start_date - timedelta(days=1)
+            since = f"{since_day.isoformat()}T23:59:59Z"
+            print(
+                f"[PHASE] Đang lấy Issues + PRs qua một luồng REST API: {full_name} "
+                f"(updated since {since}; lọc created_at {start}..{end})...",
+                flush=True,
+            )
+            rows = self.get_all_pages(
+                f"repos/{full_name}/issues",
+                {
+                    "state": "all",
+                    "since": since,
+                    "sort": "created",
+                    "direction": "asc",
+                    "per_page": 100,
+                },
+            )
+            issues: list[dict[str, Any]] = []
+            prs: list[dict[str, Any]] = []
+            skipped_outside_window = 0
+            for item in rows:
+                created = str(item.get("created_at") or "")[:10]
+                if not created or created < start_date.isoformat() or created > end_date.isoformat():
+                    skipped_outside_window += 1
+                    continue
+                if item.get("pull_request"):
+                    prs.append(item)
+                else:
+                    issues.append(item)
+            issues_status = "COMPLETE" if issues else "ZERO_CONFIRMED"
+            prs_status = "COMPLETE" if prs else "ZERO_CONFIRMED"
+            print(
+                f"[PHASE] Issues + PRs xong cho {full_name}: "
+                f"{len(rows)} API rows đọc, {skipped_outside_window} ngoài cửa sổ ngày, "
+                f"{len(issues)} issues + {len(prs)} PRs trong cửa sổ.",
+                flush=True,
+            )
+            return issues, prs, issues_status, prs_status, None, None
+        except Exception as exc:
+            message = str(exc)
+            print(f"[ERROR] Issues + PRs endpoint cho {full_name}: {message}", flush=True)
+            return [], [], "ERROR", "ERROR", message, message
+
     def search_issues_or_prs(
         self, full_name: str, kind: str, start: str, end: str
     ) -> tuple[list[dict[str, Any]], str, str | None]:
