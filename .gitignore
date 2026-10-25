@@ -16,3 +16,10 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 Thumbs.db
+
+# Canonical raw crawl output and local checkpoints can be large; do not commit them.
+data/raw/canonical/
+data/interim/
+
+# Local crawl logs
+*.log
