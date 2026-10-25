@@ -22,4 +22,4 @@ jobs:
       - name: Run tests
         run: pytest -q
       - name: Compile package
-        run: python -m compileall -q src run_pipeline.py app
+        run: python -m compileall -q src run_pipeline.py check_github_connection.py app
