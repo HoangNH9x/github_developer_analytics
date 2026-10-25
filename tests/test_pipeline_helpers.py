@@ -144,8 +144,7 @@ def test_resume_reuses_complete_metrics_and_retries_only_partial_ones(tmp_path, 
     class FakeClient:
         def __init__(self):
             self.commit_calls = 0
-            self.issue_calls = 0
-            self.pr_calls = 0
+            self.issues_pr_calls = 0
 
         def get_one(self, path):
             return {
@@ -162,12 +161,9 @@ def test_resume_reuses_complete_metrics_and_retries_only_partial_ones(tmp_path, 
             self.commit_calls += 1
             return [], "ZERO_CONFIRMED", None
 
-        def search_issues_or_prs(self, full_name, kind, start, end):
-            if kind == "issue":
-                self.issue_calls += 1
-            else:
-                self.pr_calls += 1
-            return [], "ZERO_CONFIRMED", None
+        def collect_issues_and_prs(self, full_name, start, end):
+            self.issues_pr_calls += 1
+            return [], [], "ZERO_CONFIRMED", "ZERO_CONFIRMED", None, None
 
     client = FakeClient()
     settings = Settings(token="dummy", study_start="2020-01-01", study_end="2026-10-20")
@@ -185,8 +181,7 @@ def test_resume_reuses_complete_metrics_and_retries_only_partial_ones(tmp_path, 
         previous_checkpoint=previous,
     )
     assert client.commit_calls == 0
-    assert client.issue_calls == 0
-    assert client.pr_calls == 1
+    assert client.issues_pr_calls == 1
     assert checkpoint["commits_status"] == "COMPLETE"
     assert checkpoint["commits_observed_rows"] == 1
     assert checkpoint["issues_status"] == "ZERO_CONFIRMED"
