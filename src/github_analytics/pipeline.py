@@ -283,17 +283,28 @@ def collect_one(
         }
         return base, None, checkpoint, [], [], []
 
+    print(
+        f"[OK] Metadata {repo.get('full_name') or full_name}: "
+        f"stars={repo.get('stargazers_count')}, forks={repo.get('forks_count')}",
+        flush=True,
+    )
     repository_id = repo.get("id")
     owner = repo.get("owner") or {}
     owner_login = owner.get("login") or full_name.split("/", 1)[0]
     owner_type = owner.get("type")
     profile: dict[str, Any] | None = None
     profile_error = None
+    print(f"[PHASE] Đang lấy public profile của owner {owner_login}...", flush=True)
     try:
         profile = client.owner_profile(owner_login, owner_type)
     except Exception as exc:
         profile_error = str(exc)
     raw_location = profile.get("location") if profile else None
+    print(
+        f"[PHASE] Owner profile: {'OK' if profile else 'ERROR'}; "
+        f"location={raw_location or 'không công khai'}",
+        flush=True,
+    )
     owner_country = resolve_country(raw_location)
     meta = {
         "repository_id": repository_id,
@@ -343,29 +354,38 @@ def collect_one(
     if reusable("commits", commits_path):
         commits, commits_status, commits_error = [], str(prev["commits_status"]), prev.get("commits_error")
         commits_observed_rows = int(prev.get("commits_observed_rows") or 0)
+        print(f"[PHASE] Reuse completed commits for {full_name}: {commits_observed_rows} rows.", flush=True)
     else:
+        print(f"[PHASE] Đang tải COMMITS của {full_name}...", flush=True)
         commits, commits_status, commits_error = client.collect_commits(
             str(repo.get("full_name") or full_name), settings.study_start, settings.study_end
         )
         commits_observed_rows = None
+        print(f"[PHASE] COMMITS xong: status={commits_status}, observed={len(commits)}.", flush=True)
 
     if reusable("issues", issues_path):
         issues, issues_status, issues_error = [], str(prev["issues_status"]), prev.get("issues_error")
         issues_observed_rows = int(prev.get("issues_observed_rows") or 0)
+        print(f"[PHASE] Reuse completed issues for {full_name}: {issues_observed_rows} rows.", flush=True)
     else:
+        print(f"[PHASE] Đang tải ISSUES của {full_name}...", flush=True)
         issues, issues_status, issues_error = client.search_issues_or_prs(
             str(repo.get("full_name") or full_name), "issue", settings.study_start, settings.study_end
         )
         issues_observed_rows = None
+        print(f"[PHASE] ISSUES xong: status={issues_status}, observed={len(issues)}.", flush=True)
 
     if reusable("prs", prs_path):
         prs, prs_status, prs_error = [], str(prev["prs_status"]), prev.get("prs_error")
         prs_observed_rows = int(prev.get("prs_observed_rows") or 0)
+        print(f"[PHASE] Reuse completed PRs for {full_name}: {prs_observed_rows} rows.", flush=True)
     else:
+        print(f"[PHASE] Đang tải PULL REQUESTS của {full_name}...", flush=True)
         prs, prs_status, prs_error = client.search_issues_or_prs(
             str(repo.get("full_name") or full_name), "pr", settings.study_start, settings.study_end
         )
         prs_observed_rows = None
+        print(f"[PHASE] PRs xong: status={prs_status}, observed={len(prs)}.", flush=True)
 
     commit_rows = [normalize_commit(repository_id, full_name, item, collected_at) for item in commits]
     issue_rows = [normalize_issue(repository_id, full_name, item, collected_at) for item in issues]
