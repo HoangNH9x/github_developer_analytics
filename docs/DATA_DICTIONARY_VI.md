@@ -2,6 +2,26 @@
 
 Tài liệu này là hợp đồng dữ liệu chuẩn cho nhánh tái xây dựng. Tên cột cuối cùng có thể bổ sung theo phản hồi API, nhưng định nghĩa và grain bên dưới không được thay đổi âm thầm.
 
+## Quy tắc cha–con (bắt buộc)
+
+**Repository là thực thể cha.** Mỗi repository có một `repository_id` duy nhất. Commits, Issues và Pull Requests là các thực thể/bảng con; mỗi bản ghi con giữ `repository_id` làm khóa ngoại để trỏ về repository cha.
+
+Quan hệ logic:
+
+```text
+DimRepository (cha, 1 dòng / repository_id)
+  ├── FactCommits (con, nhiều commit / repository_id)
+  ├── FactIssues (con, nhiều issue / repository_id)
+  └── FactPullRequests (con, nhiều PR / repository_id)
+```
+
+- Quốc gia owner, owner login, ngôn ngữ chính, Stars/Forks snapshot và metadata thuộc cấp repository cha.
+- Ngày hoạt động, SHA / issue ID / PR ID và thông tin từng sự kiện thuộc các bảng con tương ứng.
+- Từ bảng cha có thể đếm hoặc tổng hợp bản ghi con qua `repository_id`; không ghép trực tiếp ba bảng con với nhau vì một repo có thể có nhiều commit, nhiều issue và nhiều PR, dẫn đến nhân bản số liệu.
+- `repository_country_metrics.csv` là bảng summary ở cấp repository: đúng một dòng cho mỗi repository, dùng cho dashboard KPI và so sánh. Nó không thay thế các bảng sự kiện con.
+- Luôn tạo/kiểm tra tính duy nhất của `repository_id` ở bảng cha trước khi dùng mô hình quan hệ.
+
+
 ## 1. Raw entities
 
 ### `repositories_raw` — metadata repository
