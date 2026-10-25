@@ -249,10 +249,23 @@ def collect_one(
     except Exception as exc:
         base = {
             "repository_id": seed_row.get("repository_id", seed_row.get("repo_id")),
-            "full_name": full_name, "sample_source": source, "collected_at": collected_at,
-            "metadata_status": "ERROR", "metadata_error": str(exc),
-            "owner_profile_location": None, "owner_country": None, "owner_country_status": "UNKNOWN",
-            "study_start": settings.study_start, "study_end": settings.study_end,
+            "full_name": full_name,
+            "repo_name": full_name.split("/", 1)[-1],
+            "owner_login": seed_row.get("owner_login", full_name.split("/", 1)[0]),
+            "owner_type": seed_row.get("owner_type"),
+            "owner_profile_location": None,
+            "owner_country": None,
+            "owner_country_status": "UNKNOWN",
+            "stars_snapshot": None,
+            "forks_snapshot": None,
+            "open_issues_count_api_includes_pr": None,
+            "sample_source": source,
+            "snapshot_at": collected_at,
+            "collected_at": collected_at,
+            "metadata_status": "ERROR",
+            "metadata_error": str(exc),
+            "study_start": settings.study_start,
+            "study_end": settings.study_end,
         }
         checkpoint = {
             "full_name": full_name, "repository_id": base["repository_id"],
@@ -593,7 +606,9 @@ def run(args: argparse.Namespace) -> None:
         meta, owner, checkpoint_row, commit_rows, issue_rows, pr_rows = collect_one(client, seed_row, settings)
         # Append event rows first, then write checkpoint. If interrupted between steps,
         # the final deduplication is keyed by GitHub IDs and is safe to repeat.
-        if meta.get("metadata_status") == "COMPLETE":
+        # Keep failed repository placeholders when the seed provides a stable ID,
+        # so the quality report can distinguish failed collection from absent sample rows.
+        if meta.get("repository_id") is not None:
             upsert_by_key(meta_path, [meta], "repository_id")
         if owner:
             write_append(owner_path, [owner])
