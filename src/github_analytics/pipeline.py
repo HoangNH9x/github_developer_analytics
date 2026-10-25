@@ -607,7 +607,7 @@ def build_processed(settings: Settings, dedup_audit: list[dict[str, Any]] | None
         events = event_frame[event_frame["repository_id"].astype(str).isin(valid_ids)].copy()
         events["_date"] = pd.to_datetime(events[date_col], errors="coerce", utc=True)
         events = events[events["_date"].notna()].copy()
-        events["activity_month"] = events["_date"].dt.to_period("M").astype(str)
+        events["activity_month"] = events["_date"].dt.tz_localize(None).dt.to_period("M").astype(str)
         country_lookup = metrics[["repository_id", "owner_country"]].copy()
         country_lookup["repository_id"] = country_lookup["repository_id"].astype(str)
         country_lookup["owner_country"] = country_lookup["owner_country"].fillna("Unknown / unresolved")
