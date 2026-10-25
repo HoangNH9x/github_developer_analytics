@@ -775,10 +775,41 @@ def run(args: argparse.Namespace) -> None:
         write_append(prs_path, pr_rows)
         upsert_by_key(CHECKPOINT_PATH, [checkpoint_row], "full_name")
         print(
-            f"  commit={checkpoint_row.get('commits_status')} ({len(commit_rows)} observed), "
-            f"issue={checkpoint_row.get('issues_status')} ({len(issue_rows)} observed), "
-            f"pr={checkpoint_row.get('prs_status')} ({len(pr_rows)} observed)"
+            f"  metadata={checkpoint_row.get('metadata_status', 'UNKNOWN')}, "
+            f"commit={checkpoint_row.get('commits_status')} ({len(commit_rows)} newly observed), "
+            f"issue={checkpoint_row.get('issues_status')} ({len(issue_rows)} newly observed), "
+            f"pr={checkpoint_row.get('prs_status')} ({len(pr_rows)} newly observed)"
         )
+        if checkpoint_row.get("metadata_status") == "ERROR":
+            print(f"  [ERROR] Repository metadata failed: {checkpoint_row.get('error') or meta.get('metadata_error')}")
+        for metric in ["commits", "issues", "prs"]:
+            metric_error = checkpoint_row.get(f"{metric}_error")
+            if metric_error:
+                print(f"  [WARN] {metric} collection issue: {metric_error}")
+
+    # Fail with an actionable message if no repository metadata was collected.
+    # This is especially important for a one-repository smoke test with a bad token or a removed repo.
+    collected_metadata = read_csv_if_exists(meta_path)
+    if collected_metadata.empty or "repository_id" not in collected_metadata.columns:
+        failed_checkpoints = read_csv_if_exists(CHECKPOINT_PATH)
+        errors = []
+        if not failed_checkpoints.empty and "error" in failed_checkpoints.columns:
+            errors = [
+                f"{row.get('full_name')}: {row.get('error')}"
+                for row in failed_checkpoints.to_dict("records")
+                if row.get("metadata_status") == "ERROR" and row.get("error")
+            ]
+        print("\n[STOP] GitHub chưa trả về metadata cho repository nào; chưa tạo processed CSV.")
+        if errors:
+            print("[DIAGNOSTIC] Nguyên nhân API:")
+            for error in errors[-5:]:
+                print(f"  - {error}")
+        print("Kiểm tra token trong .env, sau đó chạy lại. Không cần xóa raw data hoặc checkpoint.")
+        return
+    if not collected_metadata.get("metadata_status", pd.Series(dtype=str)).eq("COMPLETE").any():
+        print("\n[STOP] Không có repository nào thu thập metadata thành công; chưa tạo processed CSV.")
+        print("Kiểm tra thông báo [ERROR] phía trên. Không cần xóa raw data hoặc checkpoint.")
+        return
 
     dedup_audit = deduplicate_raw_files()
     build_processed(settings, dedup_audit)
