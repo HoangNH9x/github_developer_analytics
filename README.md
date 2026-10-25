@@ -22,7 +22,7 @@ Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipe
 - **Grain bảng phân tích chính:** một dòng cho mỗi repository duy nhất theo `repository_id`.
 - **Stars / Forks:** snapshot tại thời điểm crawl, không phải mức tăng trong khoảng nghiên cứu.
 - **Commits:** dữ liệu commit trả về từ API trong cửa sổ `since` / `until`.
-- **Issues:** issues được tạo trong khoảng thời gian, tách khỏi PR qua điều kiện `is:issue`.
+- **Issues:** issue được tạo trong khoảng thời gian; pipeline lấy Issues + PRs qua một luồng phân trang REST API rồi tách issue thường khỏi PR bằng trường `pull_request`.
 - **Pull Requests:** PR được tạo trong khoảng thời gian, lấy riêng bằng `is:pr`.
 - **Country:** suy luận từ public profile location tự khai báo của owner; location mơ hồ được giữ là Unknown.
 - **Author country:** khái niệm khác với owner country và chỉ dùng trong phân tích developer riêng.
