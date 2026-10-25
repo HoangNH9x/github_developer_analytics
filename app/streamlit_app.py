@@ -162,8 +162,11 @@ with tab_overview:
         left, right = st.columns(2)
         with left:
             top = filtered.copy()
-            top["stars_snapshot"] = numeric(top.get("stars_snapshot", pd.Series(dtype=float)))
-            top = top.nlargest(10, "stars_snapshot")
+            if "stars_snapshot" in top:
+                top["stars_snapshot"] = numeric(top["stars_snapshot"])
+                top = top.nlargest(10, "stars_snapshot")
+            else:
+                top = top.head(0)
             if not top.empty:
                 fig = px.bar(
                     top.sort_values("stars_snapshot"),
