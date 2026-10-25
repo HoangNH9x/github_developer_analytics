@@ -53,7 +53,7 @@
 **Đầu ra:** clean CSVs, data quality report, quy tắc xử lý lỗi có thể chạy lại.
 
 ### Giai đoạn 4 — Mô hình dữ liệu và phân tích
-- Dùng grain rõ ràng: **một dòng trong bảng repository summary = một repository duy nhất**.
+- Dùng mô hình cha–con rõ ràng: **Repository là bảng cha** (một dòng mỗi `repository_id`); Commits, Issues và Pull Requests là các bảng con, mỗi bản ghi con giữ `repository_id` làm khóa ngoại. Bảng summary theo repository có đúng một dòng mỗi repo.
 - Khóa chính repository là GitHub `repository_id` (hoặc `repo_id` chuẩn hóa nếu dữ liệu nguồn không có ID).
 - Tạo bảng summary theo repository và bảng activity theo tháng; không join nhiều fact-detail trực tiếp với nhau theo cách gây nhân bản số liệu.
 - Tạo nhóm `Vietnam`, `Other recognized countries`, `Unknown / unresolved`.
