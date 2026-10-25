@@ -45,6 +45,11 @@ class GitHubClient:
                 self._request_times.append(now)
                 return
             sleep_for = max(0.1, 60 - (now - self._request_times[0]) + 0.1)
+            print(
+                f"[RATE LIMIT] Đã gửi {self.requests_per_minute} request/phút; "
+                f"tạm nghỉ khoảng {sleep_for:.0f}s rồi tiếp tục.",
+                flush=True,
+            )
             time.sleep(sleep_for)
 
     def request_json(self, url_or_path: str, params: dict[str, Any] | None = None) -> tuple[dict[str, Any] | list[Any], requests.Response]:
@@ -65,6 +70,11 @@ class GitHubClient:
                     else:
                         wait = min(2 ** attempt, 60)
                     if attempt < self.max_retries:
+                        print(
+                            f"[GITHUB RATE LIMIT] HTTP {response.status_code}; "
+                            f"thử lại sau khoảng {wait}s (lần {attempt + 1}/{self.max_retries}).",
+                            flush=True,
+                        )
                         time.sleep(wait)
                         continue
                 if response.status_code >= 500 and attempt < self.max_retries:
@@ -94,12 +104,23 @@ class GitHubClient:
         current_params = dict(params or {})
         current_params.setdefault("per_page", 100)
         rows: list[dict[str, Any]] = []
+        page_number = 0
+        endpoint_label = path.split("?")[0].rstrip("/").split("/")[-1]
         while url:
             payload, response = self.request_json(url, params=current_params)
             current_params = {}  # next link already contains its query params
             if not isinstance(payload, list):
                 raise GitHubAPIError(f"Expected JSON list from {response.url}")
-            rows.extend(item for item in payload if isinstance(item, dict))
+            page_number += 1
+            page_rows = [item for item in payload if isinstance(item, dict)]
+            rows.extend(page_rows)
+            # Print a heartbeat on every page: highly active repositories can be large,
+            # and without this message a user may think the process is frozen.
+            print(
+                f"[PAGINATION] {endpoint_label}: trang {page_number}, "
+                f"+{len(page_rows)} bản ghi; đã đọc {len(rows)}.",
+                flush=True,
+            )
             next_link = response.links.get("next", {}).get("url")
             url = next_link if next_link else ""
         return rows
@@ -143,8 +164,19 @@ class GitHubClient:
             assert isinstance(payload, dict)
             total = int(payload.get("total_count", 0))
             incomplete = bool(payload.get("incomplete_results", False))
+            print(
+                f"[SEARCH] {kind.upper()} {full_name}: {window_start}..{window_end}, "
+                f"{total} kết quả ước tính"
+                + (" (incomplete_results=true)" if incomplete else ""),
+                flush=True,
+            )
             if (total >= 950 or incomplete) and window_start < window_end:
                 midpoint = window_start + (window_end - window_start) // 2
+                print(
+                    f"[SEARCH] Chia khoảng ngày vì gần giới hạn kết quả: "
+                    f"{window_start}..{midpoint} và {midpoint + timedelta(days=1)}..{window_end}",
+                    flush=True,
+                )
                 fetch_window(window_start, midpoint)
                 fetch_window(midpoint + timedelta(days=1), window_end)
                 return
@@ -157,10 +189,16 @@ class GitHubClient:
                     "search/issues", {"q": query, "per_page": 100, "page": page}
                 )
                 assert isinstance(page_payload, dict)
-                for item in page_payload.get("items", []):
+                page_items = page_payload.get("items", [])
+                for item in page_items:
                     item_id = str(item.get("id") or item.get("node_id") or item.get("html_url"))
                     if item_id and item_id != "None":
                         collected[item_id] = item
+                print(
+                    f"[SEARCH PAGE] {kind.upper()} {full_name}: trang {page}/{pages}, "
+                    f"+{len(page_items)} bản ghi; đã thu thập duy nhất {len(collected)}.",
+                    flush=True,
+                )
                 if page_payload.get("incomplete_results"):
                     statuses.append("PARTIAL")
             if total == 0 and not incomplete:
