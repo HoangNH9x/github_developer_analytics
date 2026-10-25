@@ -350,6 +350,7 @@ def deduplicate_raw_files() -> None:
         (CANONICAL_RAW / "commits.csv", "commit_sha"),
         (CANONICAL_RAW / "issues.csv", "issue_id"),
         (CANONICAL_RAW / "pull_requests.csv", "pr_id"),
+        (CANONICAL_RAW / "owner_profiles.csv", "owner_login"),
     ]
     for path, key in specs:
         frame = read_csv_if_exists(path)
@@ -567,7 +568,8 @@ def run(args: argparse.Namespace) -> None:
         meta, owner, checkpoint_row, commit_rows, issue_rows, pr_rows = collect_one(client, seed_row, settings)
         # Append event rows first, then write checkpoint. If interrupted between steps,
         # the final deduplication is keyed by GitHub IDs and is safe to repeat.
-        upsert_by_key(meta_path, [meta], "repository_id")
+        if meta.get("metadata_status") == "COMPLETE":
+            upsert_by_key(meta_path, [meta], "repository_id")
         if owner:
             write_append(owner_path, [owner])
         write_append(commits_path, commit_rows)
