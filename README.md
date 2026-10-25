@@ -14,7 +14,7 @@ Phân tích hoạt động repository GitHub, xu hướng Commits / Issues / Pul
 - [Thiết kế Power BI và DAX](docs/POWERBI_MODEL_VI.md)
 - [Hướng dẫn deploy Streamlit](docs/STREAMLIT_DEPLOY_VI.md)
 
-Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipeline.py`. Dùng `python check_github_connection.py` để xác minh token local trước khi crawl. Streamlit Final nằm ở `app/streamlit_app.py`. Trước tiên cần chạy thử với 10 repositories, kiểm tra checkpoint / data-quality report, rồi mới crawl đầy đủ; sau đó mới dùng canonical processed CSV cho Power BI và deploy app.
+Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipeline.py`. Dùng `python check_github_connection.py` để xác minh token local trước khi crawl. Streamlit Final nằm ở `app/streamlit_app.py`. Trước tiên cần chạy thử với 3 repository, kiểm tra checkpoint / data-quality report, rồi mở rộng sang mẫu quốc tế/Việt Nam có kiểm soát; sau đó mới dùng canonical processed CSV cho Power BI và deploy app.
 
 ## Nghiên cứu và chỉ số
 
@@ -52,7 +52,7 @@ python run_pipeline.py --limit-repos 10
 Sau khi kiểm tra quality report và checkpoint, chạy mẫu đầy đủ với bổ sung owner Việt Nam:
 
 ```powershell
-python run_pipeline.py --discover-vietnam --vn-owner-limit 30 --vn-repos-per-owner 10
+python run_pipeline.py --seed .\smoke_test_3_seed.csv --limit-repos 3 --discover-global --global-repo-limit 12 --global-per-country 3 --global-min-stars 50 --global-max-stars 5000 --discover-vietnam --vn-owner-limit 10 --vn-repos-per-owner 1
 ```
 
 Chi tiết đầu ra, giới hạn API và cách resume được ghi trong [RUN_PIPELINE_VI.md](docs/RUN_PIPELINE_VI.md).

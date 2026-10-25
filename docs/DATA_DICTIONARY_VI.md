@@ -44,7 +44,7 @@ DimRepository (cha, 1 dòng / repository_id)
 | `forks_count` | Forks tại thời điểm crawl |
 | `open_issues_count_api_includes_pr` | Số open issues do metadata API trả về; có thể bao gồm PR, không dùng làm số issue-only |
 | `html_url` | URL web của repository |
-| `sample_source` | Nguồn đưa repository vào mẫu, ví dụ `global_seed` hoặc `vietnam_owner_discovery` |
+| `sample_source` | Nguồn đưa repository vào mẫu: `global_seed`, `global_owner_discovery` (owner quốc tế có country đã nhận diện) hoặc `vietnam_owner_discovery` |
 | `collected_at` | Thời điểm crawl metadata |
 | `collection_status` | Trạng thái lấy metadata |
 
