@@ -27,7 +27,11 @@ class GitHubClient:
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.requests_per_minute = max(1, min(requests_per_minute, 28))
-        self._request_times: deque[float] = deque()
+        # GitHub applies separate primary rate-limit buckets to Search and core REST API.
+        # Keep a conservative 4,500 core requests/hour while respecting the stricter Search cap.
+        self._request_times: deque[float] = deque()  # Search bucket; retained for test visibility.
+        self._core_request_times: deque[float] = deque()
+        self.core_requests_per_hour = 4500
         self.session = requests.Session()
         self.session.headers.update({
             "Accept": "application/vnd.github+json",
@@ -36,17 +40,23 @@ class GitHubClient:
             "User-Agent": "github-developer-analytics-student-project",
         })
 
-    def _throttle(self) -> None:
+    def _throttle(self, url_or_path: str = "search/issues") -> None:
+        path = url_or_path.split("?", 1)[0]
+        is_search = "/search/" in path or path.startswith("search/")
+        bucket = self._request_times if is_search else self._core_request_times
+        window_seconds = 60 if is_search else 3600
+        max_requests = self.requests_per_minute if is_search else self.core_requests_per_hour
+        bucket_name = "Search API" if is_search else "core API"
         while True:
             now = time.monotonic()
-            while self._request_times and now - self._request_times[0] >= 60:
-                self._request_times.popleft()
-            if len(self._request_times) < self.requests_per_minute:
-                self._request_times.append(now)
+            while bucket and now - bucket[0] >= window_seconds:
+                bucket.popleft()
+            if len(bucket) < max_requests:
+                bucket.append(now)
                 return
-            sleep_for = max(0.1, 60 - (now - self._request_times[0]) + 0.1)
+            sleep_for = max(0.1, window_seconds - (now - bucket[0]) + 0.1)
             print(
-                f"[RATE LIMIT] Đã gửi {self.requests_per_minute} request/phút; "
+                f"[RATE LIMIT] Đã gửi {max_requests} request trong cửa sổ của {bucket_name}; "
                 f"tạm nghỉ khoảng {sleep_for:.0f}s rồi tiếp tục.",
                 flush=True,
             )
@@ -56,7 +66,7 @@ class GitHubClient:
         url = url_or_path if url_or_path.startswith("http") else f"{self.api_base}/{url_or_path.lstrip('/')}"
         last_error: Exception | None = None
         for attempt in range(self.max_retries + 1):
-            self._throttle()
+            self._throttle(url)
             try:
                 response = self.session.get(url, params=params, timeout=self.timeout_seconds)
                 if response.status_code in (403, 429):
