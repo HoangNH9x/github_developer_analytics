@@ -191,3 +191,21 @@ def test_resume_reuses_complete_metrics_and_retries_only_partial_ones(tmp_path, 
     assert checkpoint["commits_observed_rows"] == 1
     assert checkpoint["issues_status"] == "ZERO_CONFIRMED"
     assert checkpoint["prs_status"] == "ZERO_CONFIRMED"
+
+def test_core_and_search_api_use_separate_rate_limit_buckets(monkeypatch):
+    import github_analytics.github_api as api_module
+    from github_analytics.github_api import GitHubClient
+
+    clock = [0.0]
+    monkeypatch.setattr(api_module.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(api_module.time, "sleep", lambda seconds: clock.__setitem__(0, clock[0] + seconds))
+    client = GitHubClient(token="test-token", requests_per_minute=2)
+
+    client._throttle("https://api.github.com/repos/org/repo/commits")
+    client._throttle("https://api.github.com/repos/org/repo")
+    assert len(client._core_request_times) == 2
+    assert len(client._request_times) == 0
+
+    client._throttle("https://api.github.com/search/issues?q=repo:org/repo")
+    assert len(client._request_times) == 1
+    assert len(client._core_request_times) == 2
