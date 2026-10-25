@@ -66,21 +66,32 @@ Sau khi chạy xong, kiểm tra:
 
 **Không xóa checkpoint trong lúc crawl.** Khi một repository có trạng thái COMPLETE/ZERO_CONFIRMED cho cả ba metric và cùng khoảng ngày, lần chạy sau sẽ bỏ qua repo đó. Các metric PARTIAL/ERROR sẽ được thử lại.
 
-## 3. Chạy đầy đủ
+## 4. Tạo mẫu Final cân bằng (khuyến nghị trước khi crawl lớn)
 
-Sau khi lượt thử nhỏ đã được kiểm tra:
+Không chạy cả 952 repository ngay. Trước hết tạo mẫu nhỏ có cả:
+- Global seed hiện có (giới hạn số repo bằng `--limit-repos`);
+- Owner-country quốc tế đã nhận diện (không trùng owner trong seed, tối đa N repo và tối đa vài repo mỗi quốc gia);
+- Owner location Việt Nam đã nhận diện từ public profile.
+
+Ví dụ tạo mẫu bổ sung, giữ nguyên 3 repo seed thử nghiệm và thêm tối đa 12 repo quốc tế cùng tối đa 10 owner Việt Nam (mỗi owner tối đa 1 repo):
 
 ```powershell
-python run_pipeline.py --discover-vietnam --vn-owner-limit 30 --vn-repos-per-owner 10
+python run_pipeline.py --seed .\smoke_test_3_seed.csv --limit-repos 3 --discover-global --global-repo-limit 12 --global-per-country 3 --global-min-stars 50 --global-max-stars 5000 --discover-vietnam --vn-owner-limit 10 --vn-repos-per-owner 1
 ```
 
-Lệnh này chạy theo seed hiện có, sau đó bổ sung các repository công khai của owner có public profile location được phân giải thành Việt Nam. Location là trường tự khai báo; không phải xác minh độc lập.
+Lưu ý:
+- Global discovery tìm repository công khai có Stars trong khoảng được đặt, rồi xác minh public profile location của owner. Unknown và Việt Nam bị loại khỏi nhóm quốc tế.
+- Mẫu này là mẫu có chủ đích, không phải mẫu ngẫu nhiên đại diện cho toàn GitHub.
+- Không chọn nhiều repository từ cùng owner trong phần global discovery; giới hạn số repo mỗi quốc gia giúp giảm tình trạng một owner hoặc một quốc gia chi phối mẫu.
+- Không đặt `--limit-repos` quá cao cho seed gốc khi chưa kiểm tra thời gian và độ phủ.
 
-Nếu chỉ muốn xử lý seed gốc, bỏ các tham số `--discover-vietnam`, `--vn-owner-limit` và `--vn-repos-per-owner`.
+Sau khi mẫu nhỏ hoàn tất, kiểm tra số repo, số record, trạng thái và coverage quốc gia. Chỉ tăng số lượng khi cần đạt mục tiêu tối thiểu 100.000 record tổng mà vẫn giữ được so sánh Việt Nam / quốc tế có ý nghĩa.
+
+## 5. Làm mới dữ liệu
 
 Muốn cập nhật snapshot Stars/Forks và thu thập lại mọi metric:
 ```powershell
-python run_pipeline.py --discover-vietnam --force-recrawl --vn-owner-limit 30 --vn-repos-per-owner 10
+python run_pipeline.py --discover-global --discover-vietnam --force-recrawl --global-repo-limit 12 --global-per-country 3 --vn-owner-limit 10 --vn-repos-per-owner 1
 ```
 Không chạy `--force-recrawl` trừ khi thật sự muốn làm mới toàn bộ lượt crawl.
 
