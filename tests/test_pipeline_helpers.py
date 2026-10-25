@@ -209,3 +209,53 @@ def test_core_and_search_api_use_separate_rate_limit_buckets(monkeypatch):
     client._throttle("https://api.github.com/search/issues?q=repo:org/repo")
     assert len(client._request_times) == 1
     assert len(client._core_request_times) == 2
+
+def test_combined_issue_pr_collection_uses_one_paginated_endpoint(monkeypatch):
+    from github_analytics.github_api import GitHubClient
+
+    client = GitHubClient(token="test-token")
+    calls = []
+
+    records = [
+        {
+            "id": 1, "number": 1, "created_at": "2020-01-05T12:00:00Z",
+            "updated_at": "2020-01-05T12:00:00Z", "title": "issue in range",
+            "html_url": "https://github.com/org/repo/issues/1",
+        },
+        {
+            "id": 2, "number": 2, "created_at": "2020-02-05T12:00:00Z",
+            "updated_at": "2020-02-05T12:00:00Z", "title": "PR in range",
+            "html_url": "https://github.com/org/repo/pull/2",
+            "pull_request": {"url": "https://api.github.com/repos/org/repo/pulls/2"},
+        },
+        {
+            "id": 3, "number": 3, "created_at": "2019-12-01T12:00:00Z",
+            "updated_at": "2020-01-05T12:00:00Z", "title": "created before window",
+            "html_url": "https://github.com/org/repo/issues/3",
+        },
+        {
+            "id": 4, "number": 4, "created_at": "2026-10-21T12:00:00Z",
+            "updated_at": "2026-10-22T12:00:00Z", "title": "created after window",
+            "html_url": "https://github.com/org/repo/issues/4",
+        },
+    ]
+
+    def fake_get_all_pages(path, params=None):
+        calls.append((path, params))
+        return records
+
+    monkeypatch.setattr(client, "get_all_pages", fake_get_all_pages)
+    issues, prs, issue_status, pr_status, issue_error, pr_error = client.collect_issues_and_prs(
+        "org/repo", "2020-01-01", "2026-10-20"
+    )
+
+    assert len(calls) == 1
+    assert calls[0][0] == "repos/org/repo/issues"
+    assert calls[0][1]["state"] == "all"
+    assert calls[0][1]["per_page"] == 100
+    assert calls[0][1]["since"] == "2019-12-31T23:59:59Z"
+    assert [row["id"] for row in issues] == [1]
+    assert [row["id"] for row in prs] == [2]
+    assert issue_status == "COMPLETE"
+    assert pr_status == "COMPLETE"
+    assert issue_error is None and pr_error is None
