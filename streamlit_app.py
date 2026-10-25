@@ -20,9 +20,9 @@ st.sidebar.title("GitHub Developer Analytics")
 st.sidebar.caption("Assignment 1 → Assignment 2")
 page = st.sidebar.radio(
     "Chọn nội dung",
-    ["Tổng quan dữ liệu", "Tổng hợp theo Repository", "So sánh Việt Nam – quốc tế", "Phân bố theo quốc gia", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
+    ["Tổng quan dữ liệu", "Tổng hợp theo Repository", "So sánh Repository theo quốc gia", "So sánh Việt Nam – quốc tế", "Hoạt động theo quốc gia tác giả", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
     index=0,
-    key="navigation_final_v1",
+    key="navigation_repository_country_v2",
 )
 st.sidebar.divider()
 st.sidebar.caption("Nguồn: CSV trong data/processed. Ứng dụng chỉ đọc dữ liệu, không gọi GitHub API.")
@@ -207,9 +207,82 @@ if page == "Tổng quan dữ liệu":
         st.markdown("**Giai đoạn 2 — mở rộng và so sánh**")
         st.write(f"Mở rộng lên {counts['Repositories']:,} repositories và phân tích commits, issues, pull requests cùng hồ sơ developer.")
 
+# PAGE 3: repository owner country comparison
+elif page == "So sánh Repository theo quốc gia":
+    st.header("3. So sánh Repository theo quốc gia")
+    st.caption("Quốc gia được lấy từ location/hồ sơ công khai của chủ repository (owner), không lấy nhầm quốc gia của người tạo commit hoặc issue.")
+    country_data = read_csv("country_repository_activity.csv")
+    vietnam_compare = read_csv("vietnam_vs_other_countries_repositories.csv")
+    if country_data.empty:
+        st.warning("Chưa có country_repository_activity.csv. Hãy chạy script mô hình Repository-first tại thư mục gốc project.")
+        st.code("python build_repository_first_model.py --fetch-owner-profiles", language="bash")
+        st.info("Lệnh này cần GITHUB_TOKEN trong .env hoặc biến môi trường. Sau khi sinh file, đưa các CSV đầu ra vào data/processed để trang này sử dụng.")
+    else:
+        required = ["owner_country", "repository_count", "country_group"]
+        missing = [c for c in required if c not in country_data.columns]
+        if missing:
+            st.error("Bảng country_repository_activity.csv thiếu cột: " + ", ".join(missing))
+        else:
+            country_data = country_data.copy()
+            country_data["repository_count"] = to_num(country_data["repository_count"]).astype(int)
+            known = country_data[country_data["country_group"] != "Unknown / unresolved"].copy()
+            unknown = country_data[country_data["country_group"] == "Unknown / unresolved"].copy()
+            vietnam_rows = country_data[country_data["country_group"] == "Vietnam"]
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Repository đã nhận diện quốc gia", f"{int(known['repository_count'].sum()):,}")
+            k2.metric("Repository thuộc nhóm Việt Nam", f"{int(vietnam_rows['repository_count'].sum()):,}")
+            k3.metric("Repository chưa rõ quốc gia owner", f"{int(unknown['repository_count'].sum()):,}")
+            if len(country_data) == 1 and not known.empty and known.iloc[0]["owner_country"] == "Unknown":
+                st.warning("Hiện chưa nhận diện được quốc gia owner. Cần thu thập owner profile trước khi so sánh.")
+            if known.empty:
+                st.warning("Chưa có đủ quốc gia owner được nhận diện để vẽ so sánh theo nước.")
+            else:
+                metric_labels = {
+                    "Số repository": "repository_count",
+                    "Tổng Stars": "stars_total",
+                    "Stars trung bình/repository": "stars_mean_per_repository",
+                    "Forks trung bình/repository": "forks_mean_per_repository",
+                    "Commits trung bình/repository (đã quan sát)": "commits_mean_per_repository_observed",
+                    "Issues trung bình/repository (đã quan sát)": "issues_mean_per_repository_observed",
+                    "Tổng hoạt động quan sát": "activity_records_observed_total",
+                    "Hoạt động trung bình/repository (đã quan sát)": "activity_records_mean_per_repository_observed",
+                }
+                available_metrics = {label: col for label, col in metric_labels.items() if col in known.columns}
+                sel1, sel2 = st.columns([1, 1])
+                with sel1:
+                    selected_label = st.selectbox("Chỉ số để so sánh", list(available_metrics.keys()), index=0)
+                with sel2:
+                    top_n = st.selectbox("Số quốc gia hiển thị", [10, 15, 20, 30, 50], index=1)
+                metric_col = available_metrics[selected_label]
+                ranked = known.sort_values(metric_col, ascending=False).head(top_n).copy()
+                ranked[metric_col] = to_num(ranked[metric_col])
+                ranked = ranked.sort_values(metric_col, ascending=True)
+                fig = px.bar(
+                    ranked, x=metric_col, y="owner_country", orientation="h", color="country_group",
+                    hover_data=[c for c in ["repository_count", "stars_total", "forks_total", "commits_observed_total", "issues_observed_total"] if c in ranked.columns],
+                    title=f"{selected_label} theo quốc gia của repository owner",
+                    color_discrete_map={"Vietnam":"#dc2626", "Other recognized countries":"#2563eb"},
+                )
+                fig.update_layout(height=max(420, 28 * len(ranked) + 120), margin=dict(l=5, r=35, t=55, b=5), xaxis_title=selected_label, yaxis_title="", legend_title="")
+                st.plotly_chart(fig, width="stretch")
+                st.subheader("Chi tiết theo quốc gia")
+                st.dataframe(known.sort_values("repository_count", ascending=False), width="stretch", hide_index=True)
+            if not vietnam_compare.empty:
+                st.subheader("Việt Nam so với các nước khác")
+                show_cols = [c for c in [
+                    "comparison_group", "repository_count", "stars_total", "stars_mean_per_repository",
+                    "forks_total", "forks_mean_per_repository", "open_issues_total_snapshot",
+                    "commits_observed_total", "commits_mean_per_repository_observed",
+                    "issues_observed_total", "issues_mean_per_repository_observed",
+                    "pull_requests_observed_total", "pull_requests_mean_per_repository_observed",
+                    "activity_records_observed_total", "activity_records_mean_per_repository_observed",
+                ] if c in vietnam_compare.columns]
+                st.dataframe(vietnam_compare[show_cols], width="stretch", hide_index=True)
+            st.warning("Diễn giải: Stars/Forks/Open Issues là snapshot metadata. Commit/Issue/PR là số bản ghi quan sát được; cần xem trạng thái Partial/Pending và độ phủ owner country trước khi kết luận.")
+
 # PAGE 2: Vietnam vs international
 elif page == "So sánh Việt Nam – quốc tế":
-    st.header("2. So sánh Việt Nam và quốc tế đã nhận diện")
+    st.header("4. So sánh Việt Nam và quốc tế đã nhận diện")
     st.caption("Nhóm quốc tế đã nhận diện không đại diện cho toàn bộ cộng đồng GitHub quốc tế.")
     compare = read_csv("vietnam_vs_international_summary.csv")
     if compare.empty:
@@ -256,8 +329,8 @@ elif page == "So sánh Việt Nam – quốc tế":
     st.warning("Location được người dùng tự khai báo. Các số liệu phản ánh dữ liệu phân loại được, không đại diện đầy đủ cho toàn bộ GitHub.")
 
 # PAGE 3: country distribution
-elif page == "Phân bố theo quốc gia":
-    st.header("3. Phân bố hoạt động theo quốc gia/vùng")
+elif page == "Hoạt động theo quốc gia tác giả":
+    st.header("5. Phân bố hoạt động theo quốc gia tác giả")
     st.caption("Thống kê theo thông tin location có thể liên kết và chuẩn hóa từ hồ sơ developer; không đại diện cho toàn bộ GitHub.")
     by_country = read_csv("activity_by_country.csv")
     if by_country.empty:
@@ -323,7 +396,7 @@ elif page == "Phân bố theo quốc gia":
 
 # PAGE 4: coverage
 elif page == "Độ phủ dữ liệu":
-    st.header("4. Độ phủ và chất lượng dữ liệu")
+    st.header("6. Độ phủ và chất lượng dữ liệu")
     coverage = read_csv("country_activity_coverage.csv")
     if coverage.empty:
         st.error(f"Chưa đọc được country_activity_coverage.csv. Kiểm tra file tại: {PROCESSED}")
@@ -362,7 +435,7 @@ elif page == "Độ phủ dữ liệu":
 
 # PAGE 5: methods
 elif page == "Phương pháp & câu hỏi":
-    st.header("5. Phương pháp và câu hỏi nghiên cứu")
+    st.header("7. Phương pháp và câu hỏi nghiên cứu")
     st.subheader("Quy trình từ Giai đoạn 1 đến Giai đoạn 2")
     st.markdown("""
     1. **Giai đoạn 1 — thử nghiệm:** dùng tập nhỏ để kiểm tra endpoint GitHub REST API, tham số phân trang, lưu CSV và xử lý dữ liệu.
