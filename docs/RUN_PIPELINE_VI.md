@@ -93,7 +93,7 @@ Không chạy `--force-recrawl` trừ khi thật sự muốn làm mới toàn b�
 - Country: suy luận thận trọng từ public profile location của owner; location mơ hồ để Unknown.
 - `open_issues_count_api_includes_pr`: trường metadata GitHub có thể bao gồm PR; không dùng nó như số issue-only trong giai đoạn.
 
-GitHub Search API có giới hạn số kết quả theo một truy vấn. Pipeline sẽ chia nhỏ cửa sổ ngày khi gần chạm ngưỡng; nếu cửa sổ một ngày vẫn không đủ bảo đảm đầy đủ thì trạng thái được đánh dấu PARTIAL. Count PARTIAL/ERROR/NOT_RUN để trống trong bảng phân tích; số bản ghi quan sát được vẫn được giữ trong raw để kiểm tra.
+Để giảm số lần gọi Search API, pipeline dùng endpoint `/repos/{owner}/{repo}/issues?state=all&since=...` cho cả Issues và Pull Requests trong một luồng phân trang REST API thông thường; sau đó tách PR bằng trường `pull_request` và lọc `created_at` trong cửa sổ nghiên cứu. Theo GitHub, `since` của endpoint này lọc theo thời điểm cập nhật, vì vậy pipeline bắt đầu trước ngày nghiên cứu và lọc lại ngày tạo tại máy. Search API chỉ dành cho discovery/fallback có kiểm soát. Số request vẫn phải tuân thủ rate limits của GitHub; không có cách hợp lệ để vượt qua giới hạn. Metric `PARTIAL/ERROR/NOT_RUN` để trống trong bảng phân tích; số record quan sát được vẫn được giữ trong raw để kiểm tra.
 
 ## 5. Quy tắc chọn mẫu và diễn giải
 
