@@ -77,6 +77,7 @@ data/
       monthly_activity.csv
       developer_activity_summary.csv
       deduplication_audit.csv
+      collection_errors.csv
       data_quality_report.csv
 src/github_analytics/
   config.py
