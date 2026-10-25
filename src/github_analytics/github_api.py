@@ -195,4 +195,8 @@ class GitHubClient:
             )
             return rows, ("COMPLETE" if rows else "ZERO_CONFIRMED"), None
         except Exception as exc:
-            return [], "ERROR", str(exc)
+            message = str(exc)
+            # GitHub returns HTTP 409 for an existing repository with no commits.
+            if "GitHub API 409" in message and "empty" in message.lower():
+                return [], "ZERO_CONFIRMED", None
+            return [], "ERROR", message
