@@ -206,12 +206,17 @@ def test_core_and_search_api_use_separate_rate_limit_buckets(monkeypatch):
     assert len(client._core_request_times) == 2
 
 def test_combined_issue_pr_collection_uses_one_paginated_endpoint(monkeypatch):
+    from types import SimpleNamespace
     from github_analytics.github_api import GitHubClient
 
     client = GitHubClient(token="test-token")
     calls = []
-
     records = [
+        {
+            "id": 3, "number": 3, "created_at": "2019-12-01T12:00:00Z",
+            "updated_at": "2020-01-05T12:00:00Z", "title": "created before window",
+            "html_url": "https://github.com/org/repo/issues/3",
+        },
         {
             "id": 1, "number": 1, "created_at": "2020-01-05T12:00:00Z",
             "updated_at": "2020-01-05T12:00:00Z", "title": "issue in range",
@@ -224,28 +229,27 @@ def test_combined_issue_pr_collection_uses_one_paginated_endpoint(monkeypatch):
             "pull_request": {"url": "https://api.github.com/repos/org/repo/pulls/2"},
         },
         {
-            "id": 3, "number": 3, "created_at": "2019-12-01T12:00:00Z",
-            "updated_at": "2020-01-05T12:00:00Z", "title": "created before window",
-            "html_url": "https://github.com/org/repo/issues/3",
-        },
-        {
             "id": 4, "number": 4, "created_at": "2026-10-21T12:00:00Z",
             "updated_at": "2026-10-22T12:00:00Z", "title": "created after window",
             "html_url": "https://github.com/org/repo/issues/4",
         },
     ]
 
-    def fake_get_all_pages(path, params=None):
-        calls.append((path, params))
-        return records
+    def fake_request_json(url, params=None):
+        calls.append((url, params))
+        response = SimpleNamespace(
+            links={"next": {"url": "https://api.github.com/next-page"}},
+            url=url,
+        )
+        return records, response
 
-    monkeypatch.setattr(client, "get_all_pages", fake_get_all_pages)
+    monkeypatch.setattr(client, "request_json", fake_request_json)
     issues, prs, issue_status, pr_status, issue_error, pr_error = client.collect_issues_and_prs(
         "org/repo", "2020-01-01", "2026-10-20"
     )
 
     assert len(calls) == 1
-    assert calls[0][0] == "repos/org/repo/issues"
+    assert calls[0][0] == "https://api.github.com/repos/org/repo/issues"
     assert calls[0][1]["state"] == "all"
     assert calls[0][1]["per_page"] == 100
     assert calls[0][1]["since"] == "2019-12-31T23:59:59Z"

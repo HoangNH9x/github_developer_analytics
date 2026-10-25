@@ -158,13 +158,12 @@ class GitHubClient:
     def collect_issues_and_prs(
         self, full_name: str, start: str, end: str
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str, str, str | None, str | None]:
-        """Fetch issues and PRs in one core REST pagination pass.
+        """Fetch Issues and PRs with one REST pagination pass and stop after study end.
 
-        The repository Issues endpoint returns both issues and pull requests. PR
-        records are marked by a 'pull_request' key. Its 'since' parameter filters
-        by updated_at, not created_at; every item created on/after study_start must
-        also have updated_at on/after study_start, so we fetch from just before the
-        start boundary and apply the exact created_at window locally.
+        The endpoint's `since` filters updated_at rather than created_at. We start just
+        before the study window, sort ascending by created date, filter created_at locally,
+        and stop requesting pages once an item is newer than the inclusive study end.
+        The pull_request key distinguishes PR-shaped items.
         """
         try:
             start_date = date.fromisoformat(start)
@@ -176,34 +175,68 @@ class GitHubClient:
                 f"(updated since {since}; lọc created_at {start}..{end})...",
                 flush=True,
             )
-            rows = self.get_all_pages(
-                f"repos/{full_name}/issues",
-                {
-                    "state": "all",
-                    "since": since,
-                    "sort": "created",
-                    "direction": "asc",
-                    "per_page": 100,
-                },
-            )
+            url = f"{self.api_base}/repos/{full_name}/issues"
+            params: dict[str, Any] = {
+                "state": "all",
+                "since": since,
+                "sort": "created",
+                "direction": "asc",
+                "per_page": 100,
+            }
             issues: list[dict[str, Any]] = []
             prs: list[dict[str, Any]] = []
-            skipped_outside_window = 0
-            for item in rows:
-                created = str(item.get("created_at") or "")[:10]
-                if not created or created < start_date.isoformat() or created > end_date.isoformat():
-                    skipped_outside_window += 1
-                    continue
-                if item.get("pull_request"):
-                    prs.append(item)
-                else:
-                    issues.append(item)
+            skipped_before_start = 0
+            page_number = 0
+            stopped_at_end = False
+
+            while url:
+                payload, response = self.request_json(url, params=params)
+                params = {}  # the next Link URL already contains the original query params
+                if not isinstance(payload, list):
+                    raise GitHubAPIError(f"Expected JSON list from {response.url}")
+                page_number += 1
+                page_relevant = 0
+                for item in payload:
+                    created_text = str(item.get("created_at") or "")
+                    created_day = created_text[:10]
+                    if not created_day:
+                        continue
+                    # Results are ordered by created ASC; following pages are outside
+                    # the study window as soon as the first post-window record appears.
+                    if created_day > end_date.isoformat():
+                        stopped_at_end = True
+                        break
+                    if created_day < start_date.isoformat():
+                        skipped_before_start += 1
+                        continue
+                    page_relevant += 1
+                    if item.get("pull_request"):
+                        prs.append(item)
+                    else:
+                        issues.append(item)
+
+                print(
+                    f"[PAGINATION] issues/{full_name}: trang {page_number}, "
+                    f"{len(payload)} API rows; trong cửa sổ trang này={page_relevant}; "
+                    f"đã có {len(issues)} Issues + {len(prs)} PRs.",
+                    flush=True,
+                )
+                if stopped_at_end:
+                    print(
+                        f"[PAGINATION] Đã gặp created_at sau ngày kết thúc {end}; "
+                        "dừng phân trang sớm.",
+                        flush=True,
+                    )
+                    break
+                next_link = response.links.get("next", {}).get("url")
+                url = next_link if next_link else ""
+
             issues_status = "COMPLETE" if issues else "ZERO_CONFIRMED"
             prs_status = "COMPLETE" if prs else "ZERO_CONFIRMED"
             print(
                 f"[PHASE] Issues + PRs xong cho {full_name}: "
-                f"{len(rows)} API rows đọc, {skipped_outside_window} ngoài cửa sổ ngày, "
-                f"{len(issues)} issues + {len(prs)} PRs trong cửa sổ.",
+                f"{page_number} trang, {skipped_before_start} bản ghi cũ bị bỏ qua, "
+                f"{len(issues)} Issues + {len(prs)} PRs trong cửa sổ.",
                 flush=True,
             )
             return issues, prs, issues_status, prs_status, None, None
