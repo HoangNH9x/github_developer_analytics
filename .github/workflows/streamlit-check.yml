@@ -6,6 +6,7 @@ on:
       - streamlit-final-dashboard
     paths:
       - "streamlit_app.py"
+      - "requirements.txt"
       - "data/processed/repository_summary.csv"
       - "data/processed/repository_summary_audit.csv"
       - ".github/workflows/streamlit-check.yml"
@@ -24,9 +25,35 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install application dependencies
+        run: python -m pip install -r requirements.txt
 
       - name: Compile app
         run: python -m py_compile streamlit_app.py
+
+      - name: Smoke-test every dashboard page
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+
+          pages = [
+              "Tổng quan dữ liệu",
+              "Tổng hợp theo Repository",
+              "So sánh Việt Nam – quốc tế",
+              "Phân bố theo quốc gia",
+              "Độ phủ dữ liệu",
+              "Phương pháp & câu hỏi",
+          ]
+          app = AppTest.from_file("streamlit_app.py", default_timeout=60).run()
+          assert len(app.exception) == 0, "\n".join(str(x.message) for x in app.exception)
+          for page in pages[1:]:
+              app.radio[0].set_value(page).run()
+              assert len(app.exception) == 0, f"Page {page} failed: " + "\n".join(str(x.message) for x in app.exception)
+          print("All dashboard pages ran without Streamlit exceptions.")
+          PY
 
       - name: Validate repository summary
         run: |
