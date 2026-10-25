@@ -37,13 +37,15 @@ class GitHubClient:
         })
 
     def _throttle(self) -> None:
-        now = time.monotonic()
-        while self._request_times and now - self._request_times[0] >= 60:
-            self._request_times.popleft()
-        if len(self._request_times) >= self.requests_per_minute:
+        while True:
+            now = time.monotonic()
+            while self._request_times and now - self._request_times[0] >= 60:
+                self._request_times.popleft()
+            if len(self._request_times) < self.requests_per_minute:
+                self._request_times.append(now)
+                return
             sleep_for = max(0.1, 60 - (now - self._request_times[0]) + 0.1)
             time.sleep(sleep_for)
-        self._request_times.append(time.monotonic())
 
     def request_json(self, url_or_path: str, params: dict[str, Any] | None = None) -> tuple[dict[str, Any] | list[Any], requests.Response]:
         url = url_or_path if url_or_path.startswith("http") else f"{self.api_base}/{url_or_path.lstrip('/')}"
