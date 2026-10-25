@@ -1,74 +1,93 @@
 # GitHub Developer Analytics
 
-## 1. Giới thiệu
+Phân tích hoạt động repository GitHub, xu hướng Commits / Issues / Pull Requests, và so sánh repository có chủ sở hữu công khai đặt location tại Việt Nam với mẫu quốc tế.
 
-GitHub Developer Analytics là project phân tích dữ liệu hoạt động của các repository trên GitHub.
+> Nhánh `rebuild-stage1-final` đang xây pipeline chuẩn mới. Các script và CSV cũ được giữ lại để đối chiếu; chúng không mặc nhiên là nguồn chính thức cho kết quả Final.
 
-Project sử dụng GitHub API để thu thập dữ liệu về:
+## Trạng thái hiện tại
 
-- Repository
-- Issues
-- Commits
-- Developers / Authors
+- [Kế hoạch làm lại Giai đoạn 1 → Final](docs/REBUILD_PLAN_VI.md)
+- [Data Dictionary](docs/DATA_DICTIONARY_VI.md)
+- [Thiết kế GitHub API crawl](docs/API_CRAWL_DESIGN_VI.md)
+- [Bản đồ file cũ](docs/LEGACY_FILE_MAP_VI.md)
+- [Hướng dẫn chạy pipeline chuẩn](docs/RUN_PIPELINE_VI.md)
 
-Sau đó dữ liệu được lưu dưới dạng CSV, kiểm tra chất lượng, làm sạch, phân tích bằng Pandas và trực quan hóa bằng Matplotlib.
+Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipeline.py`. Trước tiên cần chạy thử với 10 repositories, kiểm tra checkpoint / data-quality report, rồi mới crawl đầy đủ.
 
----
+## Nghiên cứu và chỉ số
 
-## 2. Mục tiêu của Project
+- **Khoảng thời gian hoạt động:** 2020-01-01 đến hết 2026-10-20.
+- **Grain bảng phân tích chính:** một dòng cho mỗi repository duy nhất theo `repository_id`.
+- **Stars / Forks:** snapshot tại thời điểm crawl, không phải mức tăng trong khoảng nghiên cứu.
+- **Commits:** dữ liệu commit trả về từ API trong cửa sổ `since` / `until`.
+- **Issues:** issues được tạo trong khoảng thời gian, tách khỏi PR qua điều kiện `is:issue`.
+- **Pull Requests:** PR được tạo trong khoảng thời gian, lấy riêng bằng `is:pr`.
+- **Country:** suy luận từ public profile location tự khai báo của owner; location mơ hồ được giữ là Unknown.
+- **Author country:** khái niệm khác với owner country và chỉ dùng trong phân tích developer riêng.
 
-Project nhằm phân tích:
+Không trình bày metric `PARTIAL`, `ERROR` hoặc `NOT_RUN` như số liệu chính xác và không biến dữ liệu thiếu thành zero. Mẫu repository là mẫu chọn theo các tiêu chí tìm kiếm đã ghi lại, không phải mẫu ngẫu nhiên đại diện toàn GitHub.
 
-- Mức độ phổ biến của các repository thông qua Stars và Forks.
-- Tình trạng Issues của các repository.
-- Mức độ thảo luận thông qua số lượng Comments.
-- Hoạt động Commit của các Developers/Authors.
-- Một số xu hướng và đặc điểm nổi bật trong dataset.
+## Chạy pipeline trên Windows
 
----
+Yêu cầu Python 3.10 trở lên.
 
-## 3. Nguồn dữ liệu
+```powershell
+git switch rebuild-stage1-final
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+Copy-Item .env.example .env
+```
 
-Dữ liệu được thu thập trực tiếp từ GitHub REST API.
+Điền GitHub token vào file `.env` local trên máy của bạn. Không commit file này và không chia sẻ token.
 
-Các repository được sử dụng trong project gồm:
+Chạy thử:
 
-- facebook/react
-- vuejs/vue
-- angular/angular
-- vercel/next.js
-- django/django
-- pallets/flask
-- pytorch/pytorch
-- tensorflow/tensorflow
-- microsoft/vscode
-- kubernetes/kubernetes
+```powershell
+python run_pipeline.py --limit-repos 10
+```
 
-Dữ liệu được thu thập bằng Python và thư viện `requests`.
+Sau khi kiểm tra quality report và checkpoint, chạy mẫu đầy đủ với bổ sung owner Việt Nam:
 
----
+```powershell
+python run_pipeline.py --discover-vietnam --vn-owner-limit 30 --vn-repos-per-owner 10
+```
 
-## 4. Quy trình xử lý dữ liệu
+Chi tiết đầu ra, giới hạn API và cách resume được ghi trong [RUN_PIPELINE_VI.md](docs/RUN_PIPELINE_VI.md).
 
-Project được thực hiện theo quy trình:
+## Cấu trúc dữ liệu canonical
 
 ```text
-GitHub API
-    ↓
-Raw Data
-    ↓
-CSV
-    ↓
-Data Quality Check
-    ↓
-Data Cleaning
-    ↓
-Clean CSV
-    ↓
-EDA
-    ↓
-Data Visualization
-    ↓
-Insights
-    ↓
-Report
+data/
+  raw/
+    canonical/
+      repositories.csv
+      owner_profiles.csv
+      commits.csv
+      issues.csv
+      pull_requests.csv
+      repository_checkpoint.csv
+  processed/
+    canonical/
+      repository_country_metrics.csv
+      country_repository_comparison.csv
+      vietnam_vs_other_countries_comparison.csv
+      data_quality_report.csv
+src/github_analytics/
+  config.py
+  country.py
+  github_api.py
+  pipeline.py
+tests/
+```
+
+Raw data là bản thu thập có thể kiểm tra; processed data là nguồn chuẩn dùng cho Power BI và Streamlit sau khi audit đạt.
+
+## Kiểm thử
+
+```powershell
+pytest -q
+python -m compileall -q src run_pipeline.py
+```
+
+CI chạy unit test và compile check khi push lên nhánh làm lại. CI không chạy crawl API vì token không được lưu trong repository.
