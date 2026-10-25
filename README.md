@@ -72,6 +72,9 @@ data/
       repository_country_metrics.csv
       country_repository_comparison.csv
       vietnam_vs_other_countries_comparison.csv
+      monthly_activity.csv
+      developer_activity_summary.csv
+      deduplication_audit.csv
       data_quality_report.csv
 src/github_analytics/
   config.py
