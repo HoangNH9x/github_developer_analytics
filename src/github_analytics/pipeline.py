@@ -457,6 +457,26 @@ def build_processed(settings: Settings, dedup_audit: list[dict[str, Any]] | None
     else:
         checkpoints = pd.DataFrame(columns=["full_name", "commits_status", "issues_status", "prs_status"])
 
+    error_status_columns = ["metadata_status", "owner_profile_status", "commits_status", "issues_status", "prs_status"]
+    detail_columns = [
+        "repository_id", "full_name", "sample_source", "metadata_status", "owner_profile_status",
+        "commits_status", "issues_status", "prs_status", "commits_error", "issues_error",
+        "prs_error", "error", "commits_observed_rows", "issues_observed_rows",
+        "prs_observed_rows", "study_start", "study_end", "collected_at",
+    ]
+    if not checkpoints.empty:
+        trouble_mask = pd.Series(False, index=checkpoints.index)
+        for status_col in error_status_columns:
+            if status_col in checkpoints.columns:
+                valid_statuses = {"COMPLETE", "ZERO_CONFIRMED"}
+                if status_col == "owner_profile_status":
+                    valid_statuses = {"COMPLETE"}
+                trouble_mask = trouble_mask | ~checkpoints[status_col].isin(valid_statuses)
+        error_details = checkpoints.loc[trouble_mask, [col for col in detail_columns if col in checkpoints.columns]].copy()
+    else:
+        error_details = pd.DataFrame(columns=detail_columns)
+    write_frame(CANONICAL_PROCESSED / "collection_errors.csv", error_details)
+
     commits = read_csv_if_exists(CANONICAL_RAW / "commits.csv")
     issues = read_csv_if_exists(CANONICAL_RAW / "issues.csv")
     prs = read_csv_if_exists(CANONICAL_RAW / "pull_requests.csv")
