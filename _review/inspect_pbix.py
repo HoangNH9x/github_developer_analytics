@@ -130,3 +130,48 @@ if __name__ == "__main__":
     if not PBIX.exists():
         raise SystemExit("Ass_final.pbix not found in repository root.")
     print(json.dumps(summarize_pbix(PBIX), ensure_ascii=False, indent=2))
+
+
+def df_records(obj, limit: int = 100):
+    if obj is None:
+        return []
+    try:
+        frame = obj.head(limit) if hasattr(obj, "head") else obj
+        if hasattr(frame, "to_dict"):
+            records = frame.to_dict(orient="records") if hasattr(frame, "columns") else []
+            return [
+                {str(k): (None if str(v) == "nan" else v) for k, v in row.items()}
+                for row in records
+            ]
+    except Exception as exc:
+        return [{"_extract_error": str(exc)}]
+    return []
+
+def summarize_model(path: Path) -> dict:
+    from pbixray import PBIXRay
+    model = PBIXRay(str(path))
+    schema = df_records(model.schema, 500)
+    rels = df_records(model.relationships, 100)
+    measures = df_records(model.dax_measures, 200)
+    pq = df_records(model.power_query, 100)
+    return {
+        "model_tables": list(model.tables),
+        "model_size_bytes": getattr(model, "size", None),
+        "schema_column_count_reported": len(schema),
+        "schema_columns": schema,
+        "relationships": rels,
+        "measures": measures,
+        "power_query": [
+            {
+                "TableName": x.get("TableName"),
+                "Expression_prefix": str(x.get("Expression", ""))[:1000]
+            } for x in pq
+        ],
+    }
+
+if __name__ == "__main__":
+    if PBIX.exists():
+        try:
+            print("MODEL_STRUCTURE_REPORT=" + json.dumps(summarize_model(PBIX), ensure_ascii=False, default=str))
+        except Exception as exc:
+            print("MODEL_INSPECTION_ERROR=" + repr(exc))
