@@ -152,13 +152,18 @@ def discover_vietnam_repositories(
     repositories: dict[str, dict[str, Any]] = {}
     for login, profile in verified:
         owner_type = profile.get("type") or owners[login].get("type") or "User"
-        endpoint = f"orgs/{login}/repos" if str(owner_type).lower() == "organization" else f"users/{login}/repos"
+        # Repository search supports star sorting; the per-owner list endpoint does not.
+        owner_qualifier = "org" if str(owner_type).lower() == "organization" else "user"
         try:
-            rows = client.get_all_pages(endpoint, {
-                "sort": "stars", "direction": "desc", "per_page": 100, "type": "public",
-            })
+            payload, _ = client.request_json(
+                "search/repositories",
+                {"q": f"{owner_qualifier}:{login} is:public", "sort": "stars", "order": "desc", "per_page": 100, "page": 1},
+            )
+            if not isinstance(payload, dict):
+                continue
+            rows = payload.get("items", [])
         except Exception as exc:
-            print(f"[WARN] Could not list repos for Vietnam owner {login}: {exc}", file=sys.stderr)
+            print(f"[WARN] Could not search repos for Vietnam owner {login}: {exc}", file=sys.stderr)
             continue
         included = 0
         for repo in rows:
