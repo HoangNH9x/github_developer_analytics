@@ -131,3 +131,63 @@ def test_processed_build_creates_repository_monthly_and_developer_outputs(tmp_pa
     assert (processed / "country_repository_comparison.csv").exists()
     assert (processed / "vietnam_vs_other_countries_comparison.csv").exists()
     assert (processed / "data_quality_report.csv").exists()
+
+def test_resume_reuses_complete_metrics_and_retries_only_partial_ones(tmp_path, monkeypatch):
+    import github_analytics.pipeline as pipeline
+    from github_analytics.config import Settings
+
+    raw = tmp_path / "canonical_raw"
+    raw.mkdir()
+    (raw / "commits.csv").write_text("commit_sha\nold-sha\n", encoding="utf-8")
+    monkeypatch.setattr(pipeline, "CANONICAL_RAW", raw)
+
+    class FakeClient:
+        def __init__(self):
+            self.commit_calls = 0
+            self.issue_calls = 0
+            self.pr_calls = 0
+
+        def get_one(self, path):
+            return {
+                "id": 42, "full_name": "org/repo", "name": "repo",
+                "owner": {"login": "org", "type": "Organization"},
+                "stargazers_count": 10, "forks_count": 2, "open_issues_count": 0,
+                "language": "Python", "html_url": "https://github.com/org/repo",
+            }
+
+        def owner_profile(self, owner_login, owner_type=None):
+            return {"id": 100, "login": owner_login, "type": "Organization", "location": "Hanoi, Vietnam"}
+
+        def collect_commits(self, full_name, start, end):
+            self.commit_calls += 1
+            return [], "ZERO_CONFIRMED", None
+
+        def search_issues_or_prs(self, full_name, kind, start, end):
+            if kind == "issue":
+                self.issue_calls += 1
+            else:
+                self.pr_calls += 1
+            return [], "ZERO_CONFIRMED", None
+
+    client = FakeClient()
+    settings = Settings(token="dummy", study_start="2020-01-01", study_end="2026-10-20")
+    previous = {
+        "study_start": "2020-01-01", "study_end": "2026-10-20",
+        "commits_status": "COMPLETE", "commits_observed_rows": 1,
+        "issues_status": "ZERO_CONFIRMED", "issues_observed_rows": 0,
+        "prs_status": "PARTIAL", "prs_observed_rows": 2,
+    }
+
+    meta, owner, checkpoint, commits, issues, prs = pipeline.collect_one(
+        client,
+        {"full_name": "org/repo", "repo_id": 42, "sample_source": "global_seed"},
+        settings,
+        previous_checkpoint=previous,
+    )
+    assert client.commit_calls == 0
+    assert client.issue_calls == 0
+    assert client.pr_calls == 1
+    assert checkpoint["commits_status"] == "COMPLETE"
+    assert checkpoint["commits_observed_rows"] == 1
+    assert checkpoint["issues_status"] == "ZERO_CONFIRMED"
+    assert checkpoint["prs_status"] == "ZERO_CONFIRMED"
