@@ -363,29 +363,26 @@ def collect_one(
         commits_observed_rows = None
         print(f"[PHASE] COMMITS xong: status={commits_status}, observed={len(commits)}.", flush=True)
 
-    if reusable("issues", issues_path):
+    issues_reusable = reusable("issues", issues_path)
+    prs_reusable = reusable("prs", prs_path)
+    if issues_reusable and prs_reusable:
         issues, issues_status, issues_error = [], str(prev["issues_status"]), prev.get("issues_error")
+        prs, prs_status, prs_error = [], str(prev["prs_status"]), prev.get("prs_error")
         issues_observed_rows = int(prev.get("issues_observed_rows") or 0)
-        print(f"[PHASE] Reuse completed issues for {full_name}: {issues_observed_rows} rows.", flush=True)
+        prs_observed_rows = int(prev.get("prs_observed_rows") or 0)
+        print(
+            f"[PHASE] Reuse completed Issues/PRs for {full_name}: "
+            f"{issues_observed_rows} issues, {prs_observed_rows} PRs.",
+            flush=True,
+        )
     else:
-        print(f"[PHASE] Đang tải ISSUES của {full_name}...", flush=True)
-        issues, issues_status, issues_error = client.search_issues_or_prs(
-            str(repo.get("full_name") or full_name), "issue", settings.study_start, settings.study_end
+        # One repository Issues endpoint returns both regular Issues and PR-shaped items,
+        # saving many separate Search API requests for busy repositories.
+        issues, prs, issues_status, prs_status, issues_error, prs_error = client.collect_issues_and_prs(
+            str(repo.get("full_name") or full_name), settings.study_start, settings.study_end
         )
         issues_observed_rows = None
-        print(f"[PHASE] ISSUES xong: status={issues_status}, observed={len(issues)}.", flush=True)
-
-    if reusable("prs", prs_path):
-        prs, prs_status, prs_error = [], str(prev["prs_status"]), prev.get("prs_error")
-        prs_observed_rows = int(prev.get("prs_observed_rows") or 0)
-        print(f"[PHASE] Reuse completed PRs for {full_name}: {prs_observed_rows} rows.", flush=True)
-    else:
-        print(f"[PHASE] Đang tải PULL REQUESTS của {full_name}...", flush=True)
-        prs, prs_status, prs_error = client.search_issues_or_prs(
-            str(repo.get("full_name") or full_name), "pr", settings.study_start, settings.study_end
-        )
         prs_observed_rows = None
-        print(f"[PHASE] PRs xong: status={prs_status}, observed={len(prs)}.", flush=True)
 
     commit_rows = [normalize_commit(repository_id, full_name, item, collected_at) for item in commits]
     issue_rows = [normalize_issue(repository_id, full_name, item, collected_at) for item in issues]
