@@ -1,0 +1,5 @@
+dataset,rows,unique_repositories_with_records,checkpoint_complete,partial,pending,notes
+Repositories,952,952,952,0,0,"Repository metadata master; Stars/Forks are snapshots"
+Commits,21646,26,7,19,926,"Counts are observed CSV records; pending zero is not confirmed absence"
+Issues,119622,914,168,770,14,"Counts are observed CSV records; capped/partial collection remains possible"
+Pull Requests,222876,938,339,613,0,"Counts are observed CSV records; capped/partial collection remains possible"
