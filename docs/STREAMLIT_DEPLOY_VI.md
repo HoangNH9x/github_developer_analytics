@@ -11,6 +11,7 @@
    - `monthly_activity.csv`
    - `developer_activity_summary.csv`
    - `deduplication_audit.csv`
+   - `collection_errors.csv`
    - `data_quality_report.csv`
 4. Sau khi kiểm tra dữ liệu, commit các CSV processed này lên nhánh triển khai. Thư mục raw canonical và checkpoint được .gitignore vì chúng có thể lớn; **không** commit token hoặc file `.env`.
 
