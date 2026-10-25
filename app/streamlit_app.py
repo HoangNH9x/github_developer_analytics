@@ -62,6 +62,7 @@ def missing_files() -> list[str]:
         "vietnam_vs_other_countries_comparison.csv",
         "monthly_activity.csv",
         "data_quality_report.csv",
+        "collection_errors.csv",
     ]
     return [name for name in required if not (DATA_DIR / name).exists()]
 
@@ -73,6 +74,7 @@ monthly = load_csv("monthly_activity.csv")
 developers = load_csv("developer_activity_summary.csv")
 quality = load_csv("data_quality_report.csv")
 dedup_audit = load_csv("deduplication_audit.csv")
+collection_errors = load_csv("collection_errors.csv")
 
 st.title("GitHub Developer Analytics")
 st.caption("Phân tích hoạt động repository · So sánh Việt Nam và quốc tế · Theo dõi chất lượng dữ liệu")
@@ -315,6 +317,9 @@ with tab_quality:
     if not dedup_audit.empty:
         st.subheader("Bản ghi trùng được xử lý")
         st.dataframe(dedup_audit, use_container_width=True, hide_index=True)
+    if not collection_errors.empty:
+        st.subheader("Repository có metric partial/error hoặc chưa nhận diện được owner profile")
+        st.dataframe(collection_errors, use_container_width=True, hide_index=True, height=320)
     if not metrics.empty:
         status_cols = [col for col in ["commits_status", "issues_status", "prs_status"] if col in metrics]
         if status_cols:
