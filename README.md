@@ -11,8 +11,10 @@ Phân tích hoạt động repository GitHub, xu hướng Commits / Issues / Pul
 - [Thiết kế GitHub API crawl](docs/API_CRAWL_DESIGN_VI.md)
 - [Bản đồ file cũ](docs/LEGACY_FILE_MAP_VI.md)
 - [Hướng dẫn chạy pipeline chuẩn](docs/RUN_PIPELINE_VI.md)
+- [Thiết kế Power BI và DAX](docs/POWERBI_MODEL_VI.md)
+- [Hướng dẫn deploy Streamlit](docs/STREAMLIT_DEPLOY_VI.md)
 
-Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipeline.py`. Trước tiên cần chạy thử với 10 repositories, kiểm tra checkpoint / data-quality report, rồi mới crawl đầy đủ.
+Pipeline mới nằm trong `src/github_analytics/` và có entry point `run_pipeline.py`. Streamlit Final nằm ở `app/streamlit_app.py`. Trước tiên cần chạy thử với 10 repositories, kiểm tra checkpoint / data-quality report, rồi mới crawl đầy đủ; sau đó mới dùng canonical processed CSV cho Power BI và deploy app.
 
 ## Nghiên cứu và chỉ số
 
