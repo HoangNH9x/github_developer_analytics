@@ -215,6 +215,8 @@ def normalize_issue(repo_id: Any, full_name: str, item: dict[str, Any], collecte
         "closed_at": item.get("closed_at"),
         "state": item.get("state"),
         "comments_count": item.get("comments"),
+        "creator_login": (item.get("user") or {}).get("login"),
+        "creator_type": (item.get("user") or {}).get("type"),
         "html_url": item.get("html_url"),
         "collected_at": collected_at,
     }
@@ -233,6 +235,8 @@ def normalize_pr(repo_id: Any, full_name: str, item: dict[str, Any], collected_a
         "merged_at": item.get("merged_at"),
         "state": item.get("state"),
         "comments_count": item.get("comments"),
+        "creator_login": (item.get("user") or {}).get("login"),
+        "creator_type": (item.get("user") or {}).get("type"),
         "html_url": item.get("html_url"),
         "collected_at": collected_at,
     }
@@ -512,6 +516,92 @@ def build_processed(settings: Settings, dedup_audit: list[dict[str, Any]] | None
         build_group("Unknown / unresolved", unknown),
     ]
     write_frame(CANONICAL_PROCESSED / "vietnam_vs_other_countries_comparison.csv", pd.DataFrame(fixed_groups))
+
+    # Monthly trend includes only repositories with complete collection status for each metric.
+    # Missing activity in a complete repository-month is a confirmed zero; incomplete repositories are excluded.
+    months = [str(period) for period in pd.period_range(
+        start=pd.Period(settings.study_start[:7], freq="M"),
+        end=pd.Period(settings.study_end[:7], freq="M"), freq="M"
+    )]
+    monthly_rows: list[dict[str, Any]] = []
+    countries = sorted(metrics["owner_country"].fillna("Unknown / unresolved").astype(str).unique().tolist())
+    metric_specs = [
+        ("commits", commits, "committer_date", "commits_status", "commit_sha"),
+        ("issues", issues, "created_at", "issues_status", "issue_id"),
+        ("prs", prs, "created_at", "prs_status", "pr_id"),
+    ]
+    monthly_values: dict[str, dict[tuple[str, str], int]] = {}
+    coverage_values: dict[str, dict[str, int]] = {}
+    for metric_name, event_frame, date_col, status_col, id_col in metric_specs:
+        valid_repos = metrics[metrics[status_col].isin(["COMPLETE", "ZERO_CONFIRMED"])]
+        valid_ids = set(valid_repos["repository_id"].astype(str))
+        coverage_values[metric_name] = {
+            str(country): int(group["repository_id"].nunique())
+            for country, group in valid_repos.assign(
+                owner_country=valid_repos["owner_country"].fillna("Unknown / unresolved")
+            ).groupby("owner_country")
+        }
+        if event_frame.empty or date_col not in event_frame.columns:
+            monthly_values[metric_name] = {}
+            continue
+        events = event_frame[event_frame["repository_id"].astype(str).isin(valid_ids)].copy()
+        events["_date"] = pd.to_datetime(events[date_col], errors="coerce", utc=True)
+        events = events[events["_date"].notna()].copy()
+        events["activity_month"] = events["_date"].dt.to_period("M").astype(str)
+        country_lookup = metrics[["repository_id", "owner_country"]].copy()
+        country_lookup["repository_id"] = country_lookup["repository_id"].astype(str)
+        country_lookup["owner_country"] = country_lookup["owner_country"].fillna("Unknown / unresolved")
+        events["repository_id"] = events["repository_id"].astype(str)
+        events = events.merge(country_lookup, on="repository_id", how="left", suffixes=("", "_dim"))
+        country_col = "owner_country_dim" if "owner_country_dim" in events.columns else "owner_country"
+        events[country_col] = events[country_col].fillna("Unknown / unresolved")
+        aggregated = events.groupby(["activity_month", country_col])[id_col].nunique()
+        monthly_values[metric_name] = {(str(month), str(country)): int(value) for (month, country), value in aggregated.items()}
+
+    for month in months:
+        for country in countries:
+            row: dict[str, Any] = {"activity_month": month, "owner_country": country}
+            for metric_name, _, _, _, _ in metric_specs:
+                row[f"{metric_name}_count_complete"] = monthly_values[metric_name].get((month, country), 0)
+                row[f"{metric_name}_repositories_covered"] = coverage_values[metric_name].get(country, 0)
+            monthly_rows.append(row)
+    write_frame(CANONICAL_PROCESSED / "monthly_activity.csv", pd.DataFrame(monthly_rows))
+
+    # Contributor ranking is based only on repositories whose corresponding metric was completely collected.
+    developer_counts: dict[str, dict[str, int]] = {}
+    actor_specs = [
+        ("commits", commits, "commits_status", "author_login", "commit_sha"),
+        ("issues_created", issues, "issues_status", "creator_login", "issue_id"),
+        ("prs_created", prs, "prs_status", "creator_login", "pr_id"),
+    ]
+    for metric_name, event_frame, status_col, actor_col, id_col in actor_specs:
+        if event_frame.empty or actor_col not in event_frame.columns or id_col not in event_frame.columns:
+            continue
+        valid_ids = set(metrics.loc[metrics[status_col].isin(["COMPLETE", "ZERO_CONFIRMED"]), "repository_id"].astype(str))
+        events = event_frame[event_frame["repository_id"].astype(str).isin(valid_ids)].dropna(subset=[actor_col, id_col])
+        if events.empty:
+            continue
+        counts = events.groupby(actor_col)[id_col].nunique()
+        for login, count in counts.items():
+            developer_counts.setdefault(str(login), {})[metric_name] = int(count)
+    developer_rows = []
+    for login, values in developer_counts.items():
+        commits_count = values.get("commits", 0)
+        issues_count = values.get("issues_created", 0)
+        prs_count = values.get("prs_created", 0)
+        developer_rows.append({
+            "developer_login": login,
+            "commits_count_complete": commits_count,
+            "issues_created_count_complete": issues_count,
+            "prs_created_count_complete": prs_count,
+            "total_contributions_observed_complete": commits_count + issues_count + prs_count,
+        })
+    developers_summary = pd.DataFrame(developer_rows)
+    if not developers_summary.empty:
+        developers_summary = developers_summary.sort_values(
+            "total_contributions_observed_complete", ascending=False
+        )
+    write_frame(CANONICAL_PROCESSED / "developer_activity_summary.csv", developers_summary)
 
     quality: list[dict[str, Any]] = []
     def add_check(table: str, check: str, value: Any, status: str, details: str = "") -> None:
