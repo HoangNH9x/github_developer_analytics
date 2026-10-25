@@ -16,19 +16,24 @@ Không nối các bảng event-level Commit × Issue × PR với nhau trước k
 
 ## 2. Mô hình quan hệ đề xuất
 
-### Cách đơn giản, ít lỗi nhất để dựng bản đầu
-- Dùng repository_country_metrics làm bảng fact ở grain repository.
-- Dùng monthly_activity cho biểu đồ xu hướng; dùng owner_country để lọc country trong bảng này.
-- Dùng developer_activity_summary để hiển thị top contributors độc lập.
-- Dùng hai bảng country comparison cho bảng/biểu đồ tổng hợp; không cộng các con số tổng hợp này vào KPI của fact repository.
+### Quy tắc cha–con bắt buộc
+`DimRepository` là bảng cha (một dòng cho mỗi `repository_id`). Các bảng chi tiết `FactCommits`, `FactIssues` và `FactPullRequests` là bảng con, mỗi bảng có nhiều dòng trên một repository và giữ `repository_id` làm khóa ngoại.
 
-### Nếu cần star schema rõ ràng
-1. Tạo DimRepository từ repository_country_metrics, chỉ giữ dimension columns và khử trùng theo repository_id.
-2. Tạo FactRepositoryMetrics từ file đó, giữ repository_id, metric và status columns.
-3. Quan hệ DimRepository[repository_id] (1) → (*) FactRepositoryMetrics[repository_id]; hướng lọc một chiều từ dimension.
-4. Tạo DimCountry theo owner_country duy nhất và nối một chiều tới FactRepositoryMetrics. Bảng monthly có thể nối qua DimCountry nếu values được chuẩn hóa giống nhau.
-5. Tạo DimMonth duy nhất theo activity_month rồi nối tới FactMonthlyActivity[activity_month].
-6. Không nối bảng tổng hợp vietnam_vs_other_countries_comparison vào các fact chỉ để tính tổng; dùng nó như nguồn visual so sánh hoặc tính lại từ fact.
+```text
+DimRepository[repository_id] 1 ─── * FactCommits[repository_id]
+DimRepository[repository_id] 1 ─── * FactIssues[repository_id]
+DimRepository[repository_id] 1 ─── * FactPullRequests[repository_id]
+```
+
+Các file raw canonical `commits.csv`, `issues.csv` và `pull_requests.csv` là nguồn bản ghi con; mỗi file có khóa sự kiện riêng (`commit_sha`, `issue_id`, `pr_id`). Metadata, owner-country, Stars/Forks snapshot và sample_source thuộc bảng cha.
+
+### Cách dựng model an toàn
+- Tạo `DimRepository` từ `repository_country_metrics.csv`, giữ một dòng duy nhất cho mỗi `repository_id` và các thuộc tính repo/owner.
+- Dùng `repository_country_metrics.csv` như bảng summary cấp repository cho KPI snapshot và các counts đã kiểm định. Không nối summary và mọi bảng chi tiết vào cùng một visual để tính tổng lần nữa.
+- Nếu cần drill-through tới từng sự kiện, nạp các bảng con đã khử trùng (`commits.csv`, `issues.csv`, `pull_requests.csv`) và tạo ba quan hệ 1:* một chiều từ `DimRepository`. Không tạo quan hệ trực tiếp giữa các bảng con.
+- Dùng `monthly_activity.csv` cho trend; dùng `developer_activity_summary.csv` cho contributor. Hai bảng này là bảng tổng hợp riêng, không được cộng chồng với bảng sự kiện con.
+- Dùng `country_repository_comparison.csv` và `vietnam_vs_other_countries_comparison.csv` cho visual tổng hợp; không join chúng vào bảng sự kiện.
+- Có thể tạo `DimCountry` và `DimMonth` riêng khi cần star schema mở rộng; tránh các quan hệ many-to-many và quan hệ hai chiều không cần thiết.
 
 ## 3. Các measures DAX mẫu
 
