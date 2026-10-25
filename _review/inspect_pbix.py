@@ -60,7 +60,21 @@ def summarize_pbix(path: Path) -> dict:
                 decoded_layout = raw_layout.decode("utf-8-sig")
             except UnicodeDecodeError:
                 decoded_layout = raw_layout.decode("cp1252")
-        layout = json.loads(decoded_layout)
+        try:
+            layout = json.loads(decoded_layout.lstrip("\\ufeff\\x00\\u200b"))
+        except Exception as exc:
+            print("LAYOUT_DIAGNOSTIC", json.dumps({
+                "member": layout_name,
+                "raw_length": len(raw_layout),
+                "raw_hex": raw_layout[:48].hex(),
+                "raw_repr": repr(raw_layout[:48]),
+                "utf8_repr": repr(raw_layout[:80].decode("utf-8", errors="replace")),
+                "utf16le_repr": repr(raw_layout[:80].decode("utf-16-le", errors="replace")),
+                "utf16be_repr": repr(raw_layout[:80].decode("utf-16-be", errors="replace")),
+                "decoded_prefix": repr(decoded_layout[:100]),
+                "error": str(exc),
+            }, ensure_ascii=False))
+            raise
         sections = layout.get("sections", [])
         for index, sec in enumerate(sections, start=1):
             page = {
