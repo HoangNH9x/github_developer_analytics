@@ -126,6 +126,11 @@ Phải luôn giữ đủ ba nhóm kể cả khi một nhóm có 0 repository; gh
 
 Các thông tin đề xuất: `table_name`, `check_name`, `expected_rule`, `observed_value`, `status`, `details`, `checked_at`.
 
+### `collection_errors.csv`
+**Grain:** một dòng cho mỗi repository có metric chưa hoàn tất hoặc owner profile không lấy/nhận diện được.
+
+Bảng giữ trạng thái theo từng metric, lỗi API gần nhất, số record quan sát được và khoảng nghiên cứu. Dùng để audit và giải thích coverage; không dùng các số record quan sát được từ PARTIAL như số tổng chính xác.
+
 ## 3. Nguyên tắc đếm và join
 
 1. Tách Issue khỏi PR: khi lấy Issues từ GitHub Issues API/Search API cần loại PR, ví dụ bằng điều kiện `is:issue`; lấy PR riêng bằng điều kiện `is:pr`.
