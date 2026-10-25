@@ -54,6 +54,8 @@ Tài liệu này là hợp đồng dữ liệu chuẩn cho nhánh tái xây dự
 | `closed_at` | Thời điểm đóng, null nếu chưa đóng/không có |
 | `state` | Trạng thái theo API tại lúc crawl |
 | `comments_count` | Số comment hiện tại do API trả về, không phải comment tạo trong khoảng nghiên cứu |
+| `creator_login` | Login người tạo issue theo API nếu được liên kết tài khoản |
+| `creator_type` | Loại tài khoản creator khi có |
 | `collected_at` | Thời điểm thu thập |
 
 ### `pull_requests_raw` — pull request records
@@ -69,6 +71,8 @@ Tài liệu này là hợp đồng dữ liệu chuẩn cho nhánh tái xây dự
 | `merged_at` | Thời điểm merge, có thể null |
 | `state` | Trạng thái theo API tại lúc crawl |
 | `comments_count` | Số comment hiện tại theo API, không phải count lịch sử theo ngày |
+| `creator_login` | Login người tạo PR theo API nếu được liên kết tài khoản |
+| `creator_type` | Loại tài khoản creator khi có |
 | `collected_at` | Thời điểm thu thập |
 
 ## 2. Canonical processed tables
@@ -90,8 +94,19 @@ Tối thiểu gồm:
 
 Không tính trung bình hoặc ranking dựa trên metric có status khác `COMPLETE`/ `ZERO_CONFIRMED`.
 
-### `monthly_repository_activity.csv`
-**Grain:** một dòng cho mỗi cặp `repository_id` + `activity_month` + loại activity, hoặc một schema rộng với cột metric cố định. Chọn đúng một cách và ghi rõ trong pipeline. Chỉ tạo series theo tháng nếu dữ liệu nguồn có thể chứng minh coverage tháng đó.
+### `monthly_activity.csv`
+**Grain:** một dòng cho mỗi `owner_country` + `activity_month`.
+
+Các cột hiện được pipeline xuất ra:
+- `commits_count_complete`, `issues_count_complete`, `prs_count_complete`: số sự kiện theo tháng từ các repository có trạng thái thu thập COMPLETE/ZERO_CONFIRMED cho metric tương ứng.
+- `commits_repositories_covered`, `issues_repositories_covered`, `prs_repositories_covered`: số repository trong quốc gia/nhóm có metric tương ứng thu thập hoàn chỉnh.
+
+Các repository PARTIAL/ERROR/NOT_RUN bị loại khỏi metric tương ứng. Mỗi tháng không có hoạt động trong tập đã thu thập hoàn chỉnh được thể hiện bằng 0.
+
+### `developer_activity_summary.csv`
+**Grain:** một dòng cho mỗi GitHub login xuất hiện trong record hoạt động đã thu thập hoàn chỉnh.
+
+Cột gồm `developer_login`, `commits_count_complete`, `issues_created_count_complete`, `prs_created_count_complete` và `total_contributions_observed_complete`. Các contribution counts chỉ gồm hoạt động từ repository có metric tương ứng đã thu thập hoàn chỉnh. Bảng này không gán quốc gia owner cho developer và hiện không xác minh location của tác giả.
 
 ### `country_repository_comparison.csv`
 **Grain:** một dòng cho mỗi quốc gia / nhóm quốc gia.
