@@ -1,0 +1,25 @@
+name: Rebuild pipeline tests
+
+on:
+  push:
+    branches: [rebuild-stage1-final]
+  pull_request:
+    branches: [rebuild-stage1-final]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package and test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest -q
+      - name: Compile package
+        run: python -m compileall -q src run_pipeline.py
