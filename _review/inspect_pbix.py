@@ -50,7 +50,17 @@ def summarize_pbix(path: Path) -> dict:
             result["layout_found"] = False
             return result
         result["layout_found"] = True
-        layout = json.loads(zf.read(layout_name).decode("utf-8-sig"))
+        raw_layout = zf.read(layout_name)
+        if raw_layout.startswith((b"\\xff\\xfe", b"\\xfe\\xff")):
+            decoded_layout = raw_layout.decode("utf-16")
+        elif b"\\x00" in raw_layout[:80]:
+            decoded_layout = raw_layout.decode("utf-16-le")
+        else:
+            try:
+                decoded_layout = raw_layout.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                decoded_layout = raw_layout.decode("cp1252")
+        layout = json.loads(decoded_layout)
         sections = layout.get("sections", [])
         for index, sec in enumerate(sections, start=1):
             page = {
