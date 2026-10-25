@@ -22,7 +22,25 @@ Nếu PowerShell chặn kích hoạt môi trường, có thể dùng:
 .\.venv\Scripts\python.exe run_pipeline.py --limit-repos 2
 ```
 
-## 2. Chạy thử nhỏ trước
+## 2. Kiểm tra token trước khi crawl
+
+Nếu token chưa được kiểm tra, chạy trước:
+
+```powershell
+python check_github_connection.py
+```
+
+Script chỉ in trạng thái HTTP và thông báo lỗi; không bao giờ in giá trị token. Nếu trả về HTTP 401, tạo/lưu lại token; nếu HTTP 403, xem thông báo rate limit/permission. Chỉ tiếp tục khi cả xác thực và truy cập repository công khai thành công.
+
+## 3. Chạy thử nhỏ trước
+
+```powershell
+python run_pipeline.py --seed .\\smoke_test_seed.csv --limit-repos 1
+```
+
+Nếu script báo lỗi metadata, ghi lại nguyên nhân API đầy đủ trong Terminal. Pipeline hiện sẽ dừng an toàn nếu không nhận được metadata nào, thay vì gây traceback khi tạo processed CSV. Không cần xóa checkpoint để thử lại.
+
+Khi smoke test đã thành công, mới thử 10 repositories:
 
 ```powershell
 python run_pipeline.py --limit-repos 10
