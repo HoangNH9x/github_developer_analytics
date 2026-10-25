@@ -243,7 +243,11 @@ def normalize_pr(repo_id: Any, full_name: str, item: dict[str, Any], collected_a
 
 
 def collect_one(
-    client: GitHubClient, seed_row: dict[str, Any], settings: Settings
+    client: GitHubClient,
+    seed_row: dict[str, Any],
+    settings: Settings,
+    previous_checkpoint: dict[str, Any] | None = None,
+    reuse_complete_metrics: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     full_name = str(seed_row["full_name"])
     collected_at = utc_now()
@@ -318,15 +322,51 @@ def collect_one(
         "study_end": settings.study_end,
     }
 
-    commits, commits_status, commits_error = client.collect_commits(
-        str(repo.get("full_name") or full_name), settings.study_start, settings.study_end
+    prev = previous_checkpoint or {}
+    same_window = (
+        str(prev.get("study_start")) == settings.study_start
+        and str(prev.get("study_end")) == settings.study_end
     )
-    issues, issues_status, issues_error = client.search_issues_or_prs(
-        str(repo.get("full_name") or full_name), "issue", settings.study_start, settings.study_end
-    )
-    prs, prs_status, prs_error = client.search_issues_or_prs(
-        str(repo.get("full_name") or full_name), "pr", settings.study_start, settings.study_end
-    )
+
+    def reusable(metric: str, raw_path: Path) -> bool:
+        status = prev.get(f"{metric}_status")
+        if not reuse_complete_metrics or not same_window or status not in {"COMPLETE", "ZERO_CONFIRMED"}:
+            return False
+        if status == "ZERO_CONFIRMED":
+            return True
+        return raw_path.exists() and raw_path.stat().st_size > 0
+
+    commits_path = CANONICAL_RAW / "commits.csv"
+    issues_path = CANONICAL_RAW / "issues.csv"
+    prs_path = CANONICAL_RAW / "pull_requests.csv"
+
+    if reusable("commits", commits_path):
+        commits, commits_status, commits_error = [], str(prev["commits_status"]), prev.get("commits_error")
+        commits_observed_rows = int(prev.get("commits_observed_rows") or 0)
+    else:
+        commits, commits_status, commits_error = client.collect_commits(
+            str(repo.get("full_name") or full_name), settings.study_start, settings.study_end
+        )
+        commits_observed_rows = None
+
+    if reusable("issues", issues_path):
+        issues, issues_status, issues_error = [], str(prev["issues_status"]), prev.get("issues_error")
+        issues_observed_rows = int(prev.get("issues_observed_rows") or 0)
+    else:
+        issues, issues_status, issues_error = client.search_issues_or_prs(
+            str(repo.get("full_name") or full_name), "issue", settings.study_start, settings.study_end
+        )
+        issues_observed_rows = None
+
+    if reusable("prs", prs_path):
+        prs, prs_status, prs_error = [], str(prev["prs_status"]), prev.get("prs_error")
+        prs_observed_rows = int(prev.get("prs_observed_rows") or 0)
+    else:
+        prs, prs_status, prs_error = client.search_issues_or_prs(
+            str(repo.get("full_name") or full_name), "pr", settings.study_start, settings.study_end
+        )
+        prs_observed_rows = None
+
     commit_rows = [normalize_commit(repository_id, full_name, item, collected_at) for item in commits]
     issue_rows = [normalize_issue(repository_id, full_name, item, collected_at) for item in issues]
     pr_rows = [normalize_pr(repository_id, full_name, item, collected_at) for item in prs]
@@ -339,9 +379,9 @@ def collect_one(
         "commits_status": commits_status,
         "issues_status": issues_status,
         "prs_status": prs_status,
-        "commits_observed_rows": len(commit_rows),
-        "issues_observed_rows": len(issue_rows),
-        "prs_observed_rows": len(pr_rows),
+        "commits_observed_rows": len(commit_rows) if commits_observed_rows is None else commits_observed_rows,
+        "issues_observed_rows": len(issue_rows) if issues_observed_rows is None else issues_observed_rows,
+        "prs_observed_rows": len(pr_rows) if prs_observed_rows is None else prs_observed_rows,
         "commits_error": commits_error,
         "issues_error": issues_error,
         "prs_error": prs_error,
@@ -679,21 +719,29 @@ def run(args: argparse.Namespace) -> None:
     for index, seed_row in enumerate(seed.to_dict("records"), start=1):
         full_name = str(seed_row["full_name"])
         existing = checkpoint_lookup.get(full_name)
+        same_window = bool(
+            existing
+            and str(existing.get("study_start")) == settings.study_start
+            and str(existing.get("study_end")) == settings.study_end
+        )
         if existing and not args.force_recrawl:
-            complete_window = (
-                str(existing.get("study_start")) == settings.study_start
-                and str(existing.get("study_end")) == settings.study_end
-            )
             metrics_complete = all(
                 existing.get(k) in {"COMPLETE", "ZERO_CONFIRMED"}
                 for k in ["commits_status", "issues_status", "prs_status"]
             )
-            if complete_window and existing.get("metadata_status") == "COMPLETE" and metrics_complete:
+            if same_window and existing.get("metadata_status") == "COMPLETE" and metrics_complete:
                 print(f"[{index}/{total}] SKIP complete checkpoint: {full_name}")
                 continue
 
         print(f"[{index}/{total}] Crawling {full_name}")
-        meta, owner, checkpoint_row, commit_rows, issue_rows, pr_rows = collect_one(client, seed_row, settings)
+        reusable_checkpoint = existing if same_window and not args.force_recrawl else None
+        meta, owner, checkpoint_row, commit_rows, issue_rows, pr_rows = collect_one(
+            client,
+            seed_row,
+            settings,
+            previous_checkpoint=reusable_checkpoint,
+            reuse_complete_metrics=not args.force_recrawl,
+        )
         # Append event rows first, then write checkpoint. If interrupted between steps,
         # the final deduplication is keyed by GitHub IDs and is safe to repeat.
         # Keep failed repository placeholders when the seed provides a stable ID,
