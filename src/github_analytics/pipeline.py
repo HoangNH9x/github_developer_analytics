@@ -111,6 +111,112 @@ def read_seed(path: Path, limit: int | None = None) -> pd.DataFrame:
     return seed.reset_index(drop=True)
 
 
+def discover_global_repositories(
+    client: GitHubClient,
+    repository_limit: int,
+    per_country_limit: int,
+    min_stars: int = 50,
+    max_stars: int = 5000,
+    excluded_full_names: set[str] | None = None,
+    excluded_owners: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Discover a small sample with recognized non-Vietnam owner countries.
+
+    This is a purposive comparison sample, not a random or globally representative sample.
+    It caps repositories per owner-country and excludes owners already in the seed.
+    """
+    if repository_limit <= 0:
+        return []
+    if min_stars < 0 or max_stars < min_stars:
+        raise ValueError("Invalid global star range.")
+
+    languages = ["Python", "JavaScript", "TypeScript", "Go", "Java", "Rust"]
+    excluded_names = {name.lower() for name in (excluded_full_names or set())}
+    excluded_owner_logins = {name.lower() for name in (excluded_owners or set())}
+    candidates: dict[str, dict[str, Any]] = {}
+
+    print(
+        f"[INFO] Tìm mẫu quốc tế: stars {min_stars}..{max_stars}, "
+        f"tối đa {repository_limit} repo, tối đa {per_country_limit} repo/quốc gia.",
+        flush=True,
+    )
+    for language in languages:
+        query = f"stars:{min_stars}..{max_stars} is:public fork:false language:{language}"
+        try:
+            payload, _ = client.request_json(
+                "search/repositories",
+                {"q": query, "sort": "stars", "order": "desc", "per_page": 100, "page": 1},
+            )
+            if not isinstance(payload, dict):
+                continue
+            items = payload.get("items", [])
+            print(f"[INFO] Global discovery {language}: {len(items)} candidates fetched.", flush=True)
+            for item in items:
+                full_name = str(item.get("full_name") or "").strip()
+                owner = item.get("owner") or {}
+                login = str(owner.get("login") or "").strip()
+                repo_id = item.get("id")
+                if not full_name or not login or not repo_id:
+                    continue
+                if full_name.lower() in excluded_names or login.lower() in excluded_owner_logins:
+                    continue
+                if item.get("private") or item.get("fork"):
+                    continue
+                current = candidates.get(full_name.lower())
+                if current is None or int(item.get("stargazers_count") or 0) > int(current.get("stargazers_count") or 0):
+                    candidates[full_name.lower()] = item
+        except Exception as exc:
+            print(f"[WARN] Global repository search failed for {language}: {exc}", file=sys.stderr)
+
+    ordered = sorted(candidates.values(), key=lambda row: int(row.get("stargazers_count") or 0), reverse=True)
+    country_counts: Counter[str] = Counter()
+    owner_used: set[str] = set(excluded_owner_logins)
+    owner_cache: dict[str, tuple[dict[str, Any] | None, str | None]] = {}
+    selected: list[dict[str, Any]] = []
+
+    for repo in ordered:
+        full_name = str(repo.get("full_name") or "")
+        owner = repo.get("owner") or {}
+        login = str(owner.get("login") or "").strip()
+        owner_type = owner.get("type")
+        if not login or login.lower() in owner_used:
+            continue
+        if login.lower() not in owner_cache:
+            try:
+                profile = client.owner_profile(login, owner_type)
+                owner_cache[login.lower()] = (profile, resolve_country(profile.get("location")))
+            except Exception as exc:
+                print(f"[WARN] Global owner profile unavailable for {login}: {exc}", file=sys.stderr)
+                owner_cache[login.lower()] = (None, None)
+        profile, country = owner_cache[login.lower()]
+        if not profile or not country or country == "Vietnam":
+            continue
+        if country_counts[country] >= per_country_limit:
+            continue
+
+        selected.append({
+            "repository_id": repo.get("id"),
+            "full_name": full_name,
+            "sample_source": "global_owner_discovery",
+        })
+        owner_used.add(login.lower())
+        country_counts[country] += 1
+        print(
+            f"[SAMPLE] Global repo {len(selected)}/{repository_limit}: "
+            f"{full_name} — owner country {country}.",
+            flush=True,
+        )
+        if len(selected) >= repository_limit:
+            break
+
+    print(
+        f"[INFO] Global owner-country sample selected: {len(selected)} repositories; "
+        f"recognized countries={dict(country_counts)}.",
+        flush=True,
+    )
+    return selected
+
+
 def discover_vietnam_repositories(
     client: GitHubClient, owner_limit: int, repos_per_owner: int
 ) -> list[dict[str, Any]]:
@@ -726,6 +832,24 @@ def run(args: argparse.Namespace) -> None:
         requests_per_minute=settings.requests_per_minute,
     )
 
+    if args.discover_global:
+        excluded_names = set(seed["full_name"].astype(str).str.lower())
+        excluded_owners = set(seed["full_name"].astype(str).str.split("/").str[0].str.lower())
+        global_rows = discover_global_repositories(
+            client,
+            args.global_repo_limit,
+            args.global_per_country,
+            args.global_min_stars,
+            args.global_max_stars,
+            excluded_full_names=excluded_names,
+            excluded_owners=excluded_owners,
+        )
+        if global_rows:
+            global_frame = pd.DataFrame(global_rows)
+            seed = pd.concat([seed, global_frame], ignore_index=True, sort=False)
+            seed = seed.drop_duplicates(subset=["full_name"], keep="first").reset_index(drop=True)
+            print(f"[INFO] Added {len(global_rows)} recognized international-owner repositories.")
+
     if args.discover_vietnam:
         print("[INFO] Discovering public GitHub owners whose profile location resolves to Vietnam...")
         extra_rows = discover_vietnam_repositories(client, args.vn_owner_limit, args.vn_repos_per_owner)
@@ -843,6 +967,11 @@ def main() -> None:
     parser.add_argument("--discover-vietnam", action="store_true", help="Add repositories from public owner profiles located in Vietnam")
     parser.add_argument("--vn-owner-limit", type=int, default=30)
     parser.add_argument("--vn-repos-per-owner", type=int, default=10)
+    parser.add_argument("--discover-global", action="store_true", help="Add repositories whose owners have recognized non-Vietnam public locations")
+    parser.add_argument("--global-repo-limit", type=int, default=12, help="Maximum recognized international-owner repositories to add")
+    parser.add_argument("--global-per-country", type=int, default=3, help="Maximum discovered repositories per non-Vietnam owner country")
+    parser.add_argument("--global-min-stars", type=int, default=50)
+    parser.add_argument("--global-max-stars", type=int, default=5000)
     args = parser.parse_args()
     run(args)
 
