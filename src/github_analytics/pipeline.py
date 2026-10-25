@@ -345,20 +345,32 @@ def collect_one(
     return meta, owner_record, checkpoint, commit_rows, issue_rows, pr_rows
 
 
-def deduplicate_raw_files() -> None:
+def deduplicate_raw_files() -> list[dict[str, Any]]:
     specs = [
         (CANONICAL_RAW / "commits.csv", "commit_sha"),
         (CANONICAL_RAW / "issues.csv", "issue_id"),
         (CANONICAL_RAW / "pull_requests.csv", "pr_id"),
         (CANONICAL_RAW / "owner_profiles.csv", "owner_login"),
     ]
+    audit: list[dict[str, Any]] = []
     for path, key in specs:
         frame = read_csv_if_exists(path)
         if frame.empty or key not in frame.columns:
+            audit.append({"table_name": path.stem, "key": key, "rows_before": 0, "rows_after": 0, "duplicates_removed": 0})
             continue
-        # A commit/issue/PR ID should be globally unique. Keep latest observed copy on resume.
+        before = len(frame)
         frame = frame.dropna(subset=[key]).drop_duplicates(subset=[key], keep="last")
+        after = len(frame)
         write_frame(path, frame)
+        audit.append({
+            "table_name": path.stem,
+            "key": key,
+            "rows_before": before,
+            "rows_after": after,
+            "duplicates_removed": before - after,
+        })
+    write_frame(CANONICAL_PROCESSED / "deduplication_audit.csv", pd.DataFrame(audit))
+    return audit
 
 
 def _valid_count(status: Any, count: int | None) -> float:
@@ -369,7 +381,7 @@ def _valid_count(status: Any, count: int | None) -> float:
     return float("nan")
 
 
-def build_processed(settings: Settings) -> None:
+def build_processed(settings: Settings, dedup_audit: list[dict[str, Any]] | None = None) -> None:
     CANONICAL_PROCESSED.mkdir(parents=True, exist_ok=True)
     repos = read_csv_if_exists(CANONICAL_RAW / "repositories.csv")
     checkpoints = read_csv_if_exists(CHECKPOINT_PATH)
@@ -504,6 +516,14 @@ def build_processed(settings: Settings) -> None:
               "PASS" if issues.empty or issues["issue_id"].is_unique else "FAIL")
     add_check("pull_requests", "unique_pr_id", int(prs["pr_id"].nunique()) if not prs.empty else 0,
               "PASS" if prs.empty or prs["pr_id"].is_unique else "FAIL")
+    for audit_row in (dedup_audit or []):
+        add_check(
+            str(audit_row["table_name"]),
+            "duplicates_removed",
+            int(audit_row["duplicates_removed"]),
+            "INFO",
+            f"key={audit_row['key']}; rows_before={audit_row['rows_before']}; rows_after={audit_row['rows_after']}",
+        )
     write_frame(CANONICAL_PROCESSED / "data_quality_report.csv", pd.DataFrame(quality))
 
 
@@ -582,8 +602,8 @@ def run(args: argparse.Namespace) -> None:
             f"pr={checkpoint_row.get('prs_status')} ({len(pr_rows)} observed)"
         )
 
-    deduplicate_raw_files()
-    build_processed(settings)
+    dedup_audit = deduplicate_raw_files()
+    build_processed(settings, dedup_audit)
     print(f"[DONE] Canonical raw: {CANONICAL_RAW}")
     print(f"[DONE] Canonical processed: {CANONICAL_PROCESSED}")
     print("[NOTE] Counts are blank for PARTIAL/ERROR/NOT_RUN metrics; observed partial rows remain only in raw files.")
