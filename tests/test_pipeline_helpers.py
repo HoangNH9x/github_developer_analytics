@@ -258,3 +258,52 @@ def test_combined_issue_pr_collection_uses_one_paginated_endpoint(monkeypatch):
     assert issue_status == "COMPLETE"
     assert pr_status == "COMPLETE"
     assert issue_error is None and pr_error is None
+
+def test_global_discovery_keeps_only_recognized_non_vietnam_owners(monkeypatch):
+    import github_analytics.pipeline as pipeline
+
+    class FakeClient:
+        def __init__(self):
+            self.profile_calls = []
+
+        def request_json(self, path, params=None):
+            assert path == "search/repositories"
+            items = [
+                {"id": 1, "full_name": "us-owner/project", "stargazers_count": 500,
+                 "fork": False, "private": False, "owner": {"login": "us-owner", "type": "User"}},
+                {"id": 2, "full_name": "de-owner/project", "stargazers_count": 400,
+                 "fork": False, "private": False, "owner": {"login": "de-owner", "type": "User"}},
+                {"id": 3, "full_name": "vn-owner/project", "stargazers_count": 300,
+                 "fork": False, "private": False, "owner": {"login": "vn-owner", "type": "User"}},
+                {"id": 4, "full_name": "unknown-owner/project", "stargazers_count": 200,
+                 "fork": False, "private": False, "owner": {"login": "unknown-owner", "type": "User"}},
+                {"id": 5, "full_name": "ca-owner/project", "stargazers_count": 100,
+                 "fork": False, "private": False, "owner": {"login": "ca-owner", "type": "User"}},
+            ]
+            return {"items": items}, None
+
+        def owner_profile(self, login, owner_type=None):
+            self.profile_calls.append(login)
+            locations = {
+                "us-owner": "US",
+                "de-owner": "Berlin, Germany",
+                "vn-owner": "Da Nang, Vietnam",
+                "unknown-owner": "Somewhere",
+                "ca-owner": "Toronto, Canada",
+            }
+            return {"login": login, "type": "User", "location": locations[login]}
+
+    client = FakeClient()
+    selected = pipeline.discover_global_repositories(
+        client,
+        repository_limit=3,
+        per_country_limit=1,
+        min_stars=50,
+        max_stars=5000,
+    )
+    assert [row["full_name"] for row in selected] == [
+        "us-owner/project", "de-owner/project", "ca-owner/project"
+    ]
+    assert all(row["sample_source"] == "global_owner_discovery" for row in selected)
+    assert "vn-owner" in client.profile_calls
+    assert "unknown-owner" in client.profile_calls
