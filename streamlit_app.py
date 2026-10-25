@@ -20,9 +20,9 @@ st.sidebar.title("GitHub Developer Analytics")
 st.sidebar.caption("Assignment 1 → Assignment 2")
 page = st.sidebar.radio(
     "Chọn nội dung",
-    ["Tổng quan dữ liệu", "So sánh Việt Nam – quốc tế", "Phân bố theo quốc gia", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
+    ["Tổng quan dữ liệu", "Tổng hợp theo Repository", "So sánh Repository theo quốc gia", "So sánh Việt Nam – quốc tế", "Hoạt động theo quốc gia tác giả", "Độ phủ dữ liệu", "Phương pháp & câu hỏi"],
     index=0,
-    key="navigation_v3",
+    key="navigation_repository_country_v2",
 )
 st.sidebar.divider()
 st.sidebar.caption("Nguồn: CSV trong data/processed. Ứng dụng chỉ đọc dữ liệu, không gọi GitHub API.")
@@ -207,57 +207,159 @@ if page == "Tổng quan dữ liệu":
         st.markdown("**Giai đoạn 2 — mở rộng và so sánh**")
         st.write(f"Mở rộng lên {counts['Repositories']:,} repositories và phân tích commits, issues, pull requests cùng hồ sơ developer.")
 
+# PAGE 3: repository owner country comparison
+elif page == "So sánh Repository theo quốc gia":
+    st.header("3. So sánh Repository theo quốc gia")
+    st.caption("Quốc gia được lấy từ location/hồ sơ công khai của chủ repository (owner), không lấy nhầm quốc gia của người tạo commit hoặc issue.")
+    country_data = read_csv("country_repository_activity.csv")
+    vietnam_compare = read_csv("vietnam_vs_other_countries_repositories.csv")
+    if country_data.empty:
+        st.warning("Chưa có country_repository_activity.csv. Hãy chạy script mô hình Repository-first tại thư mục gốc project.")
+        st.code("python build_repository_first_model.py --fetch-owner-profiles", language="bash")
+        st.info("Lệnh này cần GITHUB_TOKEN trong .env hoặc biến môi trường. Sau khi sinh file, đưa các CSV đầu ra vào data/processed để trang này sử dụng.")
+    else:
+        required = ["owner_country", "repository_count", "country_group"]
+        missing = [c for c in required if c not in country_data.columns]
+        if missing:
+            st.error("Bảng country_repository_activity.csv thiếu cột: " + ", ".join(missing))
+        else:
+            country_data = country_data.copy()
+            country_data["repository_count"] = to_num(country_data["repository_count"]).astype(int)
+            known = country_data[country_data["country_group"] != "Unknown / unresolved"].copy()
+            unknown = country_data[country_data["country_group"] == "Unknown / unresolved"].copy()
+            vietnam_rows = country_data[country_data["country_group"] == "Vietnam"]
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Repository đã nhận diện quốc gia", f"{int(known['repository_count'].sum()):,}")
+            k2.metric("Repository thuộc nhóm Việt Nam", f"{int(vietnam_rows['repository_count'].sum()):,}")
+            k3.metric("Repository chưa rõ quốc gia owner", f"{int(unknown['repository_count'].sum()):,}")
+            if len(country_data) == 1 and not known.empty and known.iloc[0]["owner_country"] == "Unknown":
+                st.warning("Hiện chưa nhận diện được quốc gia owner. Cần thu thập owner profile trước khi so sánh.")
+            if known.empty:
+                st.warning("Chưa có đủ quốc gia owner được nhận diện để vẽ so sánh theo nước.")
+            else:
+                metric_labels = {
+                    "Số repository": "repository_count",
+                    "Tổng Stars": "stars_total",
+                    "Stars trung bình/repository": "stars_mean_per_repository",
+                    "Forks trung bình/repository": "forks_mean_per_repository",
+                    "Commits trung bình/repository (đã quan sát)": "commits_mean_per_repository_observed",
+                    "Issues trung bình/repository (đã quan sát)": "issues_mean_per_repository_observed",
+                    "Tổng hoạt động quan sát": "activity_records_observed_total",
+                    "Hoạt động trung bình/repository (đã quan sát)": "activity_records_mean_per_repository_observed",
+                }
+                available_metrics = {label: col for label, col in metric_labels.items() if col in known.columns}
+                sel1, sel2 = st.columns([1, 1])
+                with sel1:
+                    selected_label = st.selectbox("Chỉ số để so sánh", list(available_metrics.keys()), index=0)
+                with sel2:
+                    top_n = st.selectbox("Số quốc gia hiển thị", [10, 15, 20, 30, 50], index=1)
+                metric_col = available_metrics[selected_label]
+                ranked = known.sort_values(metric_col, ascending=False).head(top_n).copy()
+                ranked[metric_col] = to_num(ranked[metric_col])
+                ranked = ranked.sort_values(metric_col, ascending=True)
+                fig = px.bar(
+                    ranked, x=metric_col, y="owner_country", orientation="h", color="country_group",
+                    hover_data=[c for c in ["repository_count", "stars_total", "forks_total", "commits_observed_total", "issues_observed_total"] if c in ranked.columns],
+                    title=f"{selected_label} theo quốc gia của repository owner",
+                    color_discrete_map={"Vietnam":"#dc2626", "Other recognized countries":"#2563eb"},
+                )
+                fig.update_layout(height=max(420, 28 * len(ranked) + 120), margin=dict(l=5, r=35, t=55, b=5), xaxis_title=selected_label, yaxis_title="", legend_title="")
+                st.plotly_chart(fig, width="stretch")
+                st.subheader("Chi tiết theo quốc gia")
+                st.dataframe(known.sort_values("repository_count", ascending=False), width="stretch", hide_index=True)
+            if not vietnam_compare.empty:
+                st.subheader("Việt Nam so với các nước khác")
+                show_cols = [c for c in [
+                    "comparison_group", "repository_count", "stars_total", "stars_mean_per_repository",
+                    "forks_total", "forks_mean_per_repository", "open_issues_total_snapshot",
+                    "commits_observed_total", "commits_mean_per_repository_observed",
+                    "issues_observed_total", "issues_mean_per_repository_observed",
+                    "pull_requests_observed_total", "pull_requests_mean_per_repository_observed",
+                    "activity_records_observed_total", "activity_records_mean_per_repository_observed",
+                ] if c in vietnam_compare.columns]
+                st.dataframe(vietnam_compare[show_cols], width="stretch", hide_index=True)
+            st.warning("Diễn giải: Stars/Forks/Open Issues là snapshot metadata. Commit/Issue/PR là số bản ghi quan sát được; cần xem trạng thái Partial/Pending và độ phủ owner country trước khi kết luận.")
+
 # PAGE 2: Vietnam vs international
 elif page == "So sánh Việt Nam – quốc tế":
-    st.header("2. So sánh Việt Nam và quốc tế đã nhận diện")
-    st.caption("Nhóm quốc tế đã nhận diện không đại diện cho toàn bộ cộng đồng GitHub quốc tế.")
-    compare = read_csv("vietnam_vs_international_summary.csv")
+    st.header("4. So sánh hoạt động của tác giả Việt Nam và quốc tế")
+    st.caption("Trang này phân loại theo location hồ sơ tác giả của hoạt động, khác với trang so sánh quốc gia của repository owner.")
+    compare = read_csv("vietnam_vs_other_author_countries.csv")
     if compare.empty:
-        st.error(f"Chưa đọc được vietnam_vs_international_summary.csv. Kiểm tra file tại: {PROCESSED}")
+        compare = read_csv("vietnam_vs_international_summary.csv")
+    if compare.empty:
+        st.warning("Chưa tìm thấy bảng so sánh theo quốc gia tác giả. Chạy build_repository_first_model.py để tạo vietnam_vs_other_author_countries.csv.")
     else:
         c_type = get_col(compare, "activity_type")
-        c_group = get_col(compare, "group")
-        c_records = get_col(compare, "records")
-        c_authors = get_col(compare, "unique_authors")
-        c_repos = get_col(compare, "repositories")
+        c_group = get_col(compare, "author_country_group", "group")
+        c_records = get_col(compare, "activity_records_observed", "records", "activity_records")
+        c_authors = get_col(compare, "unique_authors_observed", "unique_authors")
+        c_repos = get_col(compare, "repositories_with_observed_activity", "repositories", "unique_repositories")
         if not (c_type and c_group and c_records):
-            st.error("CSV so sánh chưa có đủ cột activity_type, group, records. Các cột đọc được: " + ", ".join(map(str, compare.columns)))
+            st.error("CSV so sánh chưa có đủ cột hoạt động, nhóm quốc gia và số bản ghi. Các cột đang có: " + ", ".join(map(str, compare.columns)))
         else:
             data = compare.copy()
             data["Loại hoạt động"] = data[c_type].map(vn_label)
-            data["Nhóm"] = data[c_group].map(vn_label)
+            def normalize_compare_group(value):
+                raw = str(value).strip().casefold()
+                if raw in {"vietnam", "viet nam", "việt nam"}:
+                    return "Việt Nam"
+                if raw in {"international", "other recognized countries", "quốc tế đã nhận diện"}:
+                    return "Quốc tế đã nhận diện"
+                if raw in {"unknown / unresolved", "unknown", "unresolved location", "unprofiled"}:
+                    return "Chưa xác định"
+                return str(value)
+            data["Nhóm quốc gia tác giả"] = data[c_group].map(normalize_compare_group)
             data["Số bản ghi"] = to_num(data[c_records]).astype(int)
-            data = data[data[c_type].isin(["Issues", "Pull Requests"]) & data[c_group].isin(["Vietnam", "International"])].copy()
-            if data.empty:
-                st.warning("CSV đã đọc được nhưng không có dòng mang group=Vietnam/International và activity_type=Issues/Pull Requests.")
-                st.write("Các giá trị group hiện có:", sorted(compare[c_group].dropna().astype(str).unique().tolist()))
-                st.write("Các giá trị activity_type hiện có:", sorted(compare[c_type].dropna().astype(str).unique().tolist()))
+            if c_authors:
+                data["Tác giả duy nhất đã nhận diện"] = to_num(data[c_authors]).astype(int)
+            if c_repos:
+                data["Repository có hoạt động"] = to_num(data[c_repos]).astype(int)
+            selected = data[data["Nhóm quốc gia tác giả"].isin(["Việt Nam", "Quốc tế đã nhận diện"])].copy()
+            if selected.empty:
+                st.warning("Bảng đã đọc được nhưng không có bản ghi thuộc nhóm Việt Nam và quốc tế đã nhận diện.")
+                st.dataframe(data, width="stretch", hide_index=True)
             else:
-                order_type = ["Issues", "Pull Requests"]
-                data["Loại hoạt động"] = pd.Categorical(data["Loại hoạt động"], categories=[vn_label(x) for x in order_type], ordered=True)
-                fig = px.bar(data, x="Số bản ghi", y="Loại hoạt động", color="Nhóm", barmode="group", orientation="h",
-                             text="Số bản ghi", color_discrete_map={"Việt Nam": "#dc2626", "Quốc tế đã nhận diện": "#2563eb"})
+                type_options = selected["Loại hoạt động"].dropna().astype(str).unique().tolist()
+                selected_type = st.selectbox("Loại hoạt động", type_options)
+                plot_data = selected[selected["Loại hoạt động"] == selected_type].copy()
+                kpis = st.columns(3)
+                vn_data = plot_data[plot_data["Nhóm quốc gia tác giả"] == "Việt Nam"]
+                intl_data = plot_data[plot_data["Nhóm quốc gia tác giả"] == "Quốc tế đã nhận diện"]
+                vn_records = int(vn_data["Số bản ghi"].sum())
+                intl_records = int(intl_data["Số bản ghi"].sum())
+                kpis[0].metric("Bản ghi — Việt Nam", f"{vn_records:,}")
+                kpis[1].metric("Bản ghi — quốc tế đã nhận diện", f"{intl_records:,}")
+                known_total = vn_records + intl_records
+                kpis[2].metric("Tỷ trọng Việt Nam trong hai nhóm", f"{(vn_records / known_total * 100):.2f}%" if known_total else "—")
+                fig = px.bar(
+                    plot_data, x="Nhóm quốc gia tác giả", y="Số bản ghi",
+                    color="Nhóm quốc gia tác giả", text="Số bản ghi",
+                    color_discrete_map={"Việt Nam":"#dc2626", "Quốc tế đã nhận diện":"#2563eb"},
+                    title=f"{selected_type}: Việt Nam so với quốc tế đã nhận diện",
+                )
                 fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False)
-                fig.update_layout(height=420, margin=dict(l=5, r=50, t=10, b=5), xaxis_title="Số bản ghi", yaxis_title="", legend_title="Nhóm")
+                fig.update_layout(height=400, margin=dict(l=5, r=20, t=55, b=5), xaxis_title="", yaxis_title="Số bản ghi", showlegend=False)
                 st.plotly_chart(fig, width="stretch")
-                display = pd.DataFrame({"Loại hoạt động": data["Loại hoạt động"].astype(str), "Nhóm": data["Nhóm"], "Số bản ghi": data["Số bản ghi"]})
-                if c_authors:
-                    display["Tác giả duy nhất"] = to_num(data[c_authors]).astype(int).values
-                if c_repos:
-                    display["Số repository"] = to_num(data[c_repos]).astype(int).values
-                st.subheader("Bảng số liệu đối chiếu")
-                st.dataframe(display, width="stretch", hide_index=True)
-                for activity in order_type:
-                    group_rows = data[data[c_type] == activity]
-                    vn = group_rows[group_rows[c_group] == "Vietnam"]["Số bản ghi"].sum()
-                    intl = group_rows[group_rows[c_group] == "International"]["Số bản ghi"].sum()
-                    if vn + intl > 0:
-                        st.write(f"**{vn_label(activity)}:** nhóm Việt Nam chiếm {vn / (vn + intl) * 100:.2f}% trong hai nhóm đã nhận diện.")
-    st.warning("Location được người dùng tự khai báo. Các số liệu phản ánh dữ liệu phân loại được, không đại diện đầy đủ cho toàn bộ GitHub.")
+                show_cols = [c for c in ["Loại hoạt động", "Nhóm quốc gia tác giả", "Số bản ghi", "Tác giả duy nhất đã nhận diện", "Repository có hoạt động"] if c in selected.columns]
+                st.subheader("Bảng so sánh theo hoạt động")
+                st.dataframe(selected[show_cols].sort_values(["Loại hoạt động", "Nhóm quốc gia tác giả"]), width="stretch", hide_index=True)
+            st.warning("Location là thông tin do tài khoản tự khai báo. Nhóm quốc tế chỉ gồm tác giả có quốc gia nhận diện được, không đại diện toàn bộ GitHub. Commits chỉ có dữ liệu quan sát ở 26/952 repository hiện tại.")
+
+    st.subheader("Cấp repository: hoạt động theo quốc gia tác giả")
+    repo_country_activity = read_csv("repository_activity_by_author_country.csv")
+    if repo_country_activity.empty:
+        st.caption("Sau khi chạy build_repository_first_model.py, bảng repository_activity_by_author_country.csv cho phép lọc repository theo quốc gia tác giả.")
+    else:
+        country_filter_values = ["Vietnam", "Other recognized countries", "Unknown / unresolved"]
+        if "author_country_group" in repo_country_activity.columns:
+            country_label = st.selectbox("Lọc nhóm quốc gia tác giả tại cấp repository", country_filter_values, index=0)
+            repo_filtered = repo_country_activity[repo_country_activity["author_country_group"] == country_label].copy()
+            st.dataframe(repo_filtered.sort_values("activity_records_observed", ascending=False).head(200), width="stretch", hide_index=True)
 
 # PAGE 3: country distribution
-elif page == "Phân bố theo quốc gia":
-    st.header("3. Phân bố hoạt động theo quốc gia/vùng")
+elif page == "Hoạt động theo quốc gia tác giả":
+    st.header("5. Phân bố hoạt động theo quốc gia tác giả")
     st.caption("Thống kê theo thông tin location có thể liên kết và chuẩn hóa từ hồ sơ developer; không đại diện cho toàn bộ GitHub.")
     by_country = read_csv("activity_by_country.csv")
     if by_country.empty:
@@ -323,7 +425,7 @@ elif page == "Phân bố theo quốc gia":
 
 # PAGE 4: coverage
 elif page == "Độ phủ dữ liệu":
-    st.header("4. Độ phủ và chất lượng dữ liệu")
+    st.header("6. Độ phủ và chất lượng dữ liệu")
     coverage = read_csv("country_activity_coverage.csv")
     if coverage.empty:
         st.error(f"Chưa đọc được country_activity_coverage.csv. Kiểm tra file tại: {PROCESSED}")
@@ -360,9 +462,9 @@ elif page == "Độ phủ dữ liệu":
             st.dataframe(out, width="stretch", hide_index=True)
     st.info("Location là thông tin tự khai báo. Không trùng khóa trong CSV không đồng nghĩa đã thu thập đầy đủ toàn bộ lịch sử.")
 
-# PAGE 4: methods
-else:
-    st.header("5. Phương pháp và câu hỏi nghiên cứu")
+# PAGE 5: methods
+elif page == "Phương pháp & câu hỏi":
+    st.header("7. Phương pháp và câu hỏi nghiên cứu")
     st.subheader("Quy trình từ Giai đoạn 1 đến Giai đoạn 2")
     st.markdown("""
     1. **Giai đoạn 1 — thử nghiệm:** dùng tập nhỏ để kiểm tra endpoint GitHub REST API, tham số phân trang, lưu CSV và xử lý dữ liệu.
@@ -385,6 +487,111 @@ else:
     - Commits hiện quan sát từ năm 2024, không phủ toàn bộ giai đoạn mục tiêu từ năm 2020.
     - Số bản ghi hoạt động không đồng nghĩa số developer duy nhất.
     """)
+
+# PAGE 2: repository-centric summary
+elif page == "Tổng hợp theo Repository":
+    st.header("2. Tổng hợp theo Repository")
+    st.caption("Mỗi dòng tương ứng một repository. Commits, Issues và Pull Requests được đếm riêng rồi ghép vào bảng metadata repository.")
+    summary = read_csv("repository_summary.csv")
+    if summary.empty:
+        st.error("Chưa đọc được repository_summary.csv trong data/processed. Kiểm tra file ở nhánh streamlit-final-dashboard.")
+    else:
+        # Keep the repository grain explicit and prevent accidental fan-out.
+        if "repo_id" in summary.columns:
+            summary["repo_id"] = summary["repo_id"].astype("string")
+        for col in ["stars", "forks", "open_issues", "commits_observed_count", "issues_observed_count", "pull_requests_observed_count"]:
+            if col in summary.columns:
+                summary[col] = to_num(summary[col]).astype("int64")
+        if "full_name" in summary.columns:
+            summary = summary.drop_duplicates(subset=["repo_id"] if "repo_id" in summary.columns else ["full_name"], keep="first")
+        commits_col = "commits_observed_count"
+        issues_col = "issues_observed_count"
+        prs_col = "pull_requests_observed_count"
+        kpi = st.columns(4)
+        kpi[0].metric("Repositories", f"{summary['repo_id'].nunique() if 'repo_id' in summary.columns else summary['full_name'].nunique():,}")
+        kpi[1].metric("Commits quan sát", f"{int(summary[commits_col].sum()):,}")
+        kpi[2].metric("Issues quan sát", f"{int(summary[issues_col].sum()):,}")
+        kpi[3].metric("Pull Requests quan sát", f"{int(summary[prs_col].sum()):,}")
+        st.warning("Các count là số dòng đã có trong CSV. Nhiều repository còn Partial/Pending; count bằng 0 ở trạng thái chưa hoàn tất không có nghĩa repository thật sự không có hoạt động.")
+        st.subheader("Tìm kiếm và lọc repository")
+        f1, f2, f3, f4 = st.columns([2.0, 1.1, 1.0, 1.2])
+        with f1:
+            search = st.text_input("Tên repository hoặc owner", placeholder="Ví dụ: openclaw/openclaw")
+        with f2:
+            langs = ["Tất cả"] + sorted(summary["language"].fillna("Unknown").astype(str).replace("", "Unknown").unique().tolist()) if "language" in summary.columns else ["Tất cả"]
+            lang_filter = st.selectbox("Ngôn ngữ", langs)
+        with f3:
+            sort_metric = st.selectbox("Sắp xếp theo", ["stars", "forks", "commits_observed_count", "issues_observed_count", "pull_requests_observed_count"], format_func=lambda v: {"stars":"Stars", "forks":"Forks", "commits_observed_count":"Commits", "issues_observed_count":"Issues", "pull_requests_observed_count":"Pull Requests"}[v])
+        with f4:
+            min_stars = st.number_input("Stars tối thiểu", min_value=0, max_value=int(summary["stars"].max()) if "stars" in summary.columns and not summary.empty else 0, value=0, step=100)
+        view = summary.copy()
+        if search:
+            name_series = view.get("full_name", pd.Series("", index=view.index)).fillna("").astype(str)
+            owner_series = view.get("owner_login", pd.Series("", index=view.index)).fillna("").astype(str)
+            view = view[name_series.str.contains(search, case=False, regex=False) | owner_series.str.contains(search, case=False, regex=False)]
+        if lang_filter != "Tất cả" and "language" in view.columns:
+            view = view[view["language"].fillna("Unknown").astype(str).replace("", "Unknown") == lang_filter]
+        if "stars" in view.columns:
+            view = view[view["stars"] >= min_stars]
+        view = view.sort_values(sort_metric, ascending=False, na_position="last")
+        st.caption(f"Đang hiển thị {len(view):,} / {len(summary):,} repository")
+        table_cols = [c for c in [
+            "repo_id", "full_name", "owner_login", "owner_type", "language", "stars", "forks", "open_issues",
+            "commits_observed_count", "commits_collection_status", "issues_observed_count", "issues_collection_status",
+            "pull_requests_observed_count", "pull_requests_collection_status",
+            "commits_by_vietnam_authors_observed", "commits_by_other_country_authors_observed",
+            "issues_by_vietnam_authors_observed", "issues_by_other_country_authors_observed",
+            "pull_requests_by_vietnam_authors_observed", "pull_requests_by_other_country_authors_observed",
+            "created_at", "updated_at", "html_url"
+        ] if c in view.columns]
+        st.dataframe(view[table_cols], width="stretch", hide_index=True, height=470,
+                     column_config={"html_url": st.column_config.LinkColumn("Repository URL")})
+        st.download_button("Tải bảng tổng hợp đã lọc (CSV)", data=view[table_cols].to_csv(index=False).encode("utf-8-sig"),
+                           file_name="repository_summary_filtered.csv", mime="text/csv")
+        st.subheader("Hoạt động theo repository")
+        m1, m2 = st.columns([1, 2])
+        with m1:
+            activity_metric = st.selectbox("Chỉ số hoạt động", ["commits_observed_count", "issues_observed_count", "pull_requests_observed_count"],
+                format_func=lambda v: {"commits_observed_count":"Commits quan sát", "issues_observed_count":"Issues quan sát", "pull_requests_observed_count":"Pull Requests quan sát"}[v])
+            top_n = st.slider("Số repository trên biểu đồ", min_value=10, max_value=50, value=20, step=5)
+        status_col = {"commits_observed_count":"commits_collection_status", "issues_observed_count":"issues_collection_status", "pull_requests_observed_count":"pull_requests_collection_status"}[activity_metric]
+        with m2:
+            top = view.sort_values(activity_metric, ascending=False).head(top_n).copy()
+            if not top.empty:
+                fig = px.bar(top.sort_values(activity_metric), x=activity_metric, y="full_name", orientation="h",
+                    color=status_col if status_col in top.columns else None, hover_data=[c for c in ["stars", "forks", "language", "owner_login"] if c in top.columns],
+                    title="Top repository theo số bản ghi đã thu thập")
+                fig.update_layout(height=max(450, 26 * len(top) + 100), margin=dict(l=5, r=20, t=55, b=5), xaxis_title="Số bản ghi", yaxis_title="")
+                st.plotly_chart(fig, width="stretch")
+        st.subheader("Giai đoạn 1 và Giai đoạn 2 — kiểm kê bản ghi")
+        stage1_files = {"Repositories":"repositories.csv", "Commits":"commits.csv", "Issues":"issues.csv"}
+        stage1_counts = {}
+        for label, filename in stage1_files.items():
+            path = ROOT / "Ass_GD1" / filename
+            if path.is_file():
+                try:
+                    stage1_counts[label] = len(pd.read_csv(path, low_memory=False, encoding="utf-8-sig"))
+                except Exception:
+                    stage1_counts[label] = None
+            else:
+                stage1_counts[label] = None
+        stage2_counts = {
+            "Repositories": int(summary["repo_id"].nunique()) if "repo_id" in summary.columns else len(summary),
+            "Commits": int(summary[commits_col].sum()),
+            "Issues": int(summary[issues_col].sum()),
+            "Pull Requests": int(summary[prs_col].sum()),
+        }
+        comp_rows = []
+        for label in ["Repositories", "Commits", "Issues", "Pull Requests"]:
+            old_count = stage1_counts.get(label)
+            comp_rows.append({
+                "Dataset": label,
+                "Giai đoạn 1 - số dòng CSV": f"{old_count:,}" if old_count is not None else "Không có file",
+                "Giai đoạn 2 - số dòng quan sát": f"{stage2_counts[label]:,}",
+                "Ghi chú": "Pull Requests được bổ sung ở Giai đoạn 2" if label == "Pull Requests" else "Các số đếm phản ánh file CSV hiện có"
+            })
+        st.dataframe(pd.DataFrame(comp_rows), width="stretch", hide_index=True)
+        st.info("Bảng này giúp trình bày quy mô dữ liệu qua hai giai đoạn. Không dùng chênh lệch trực tiếp làm tăng trưởng nếu bộ dữ liệu hoặc quy tắc crawl giữa hai giai đoạn khác nhau.")
 
 st.divider()
 st.caption("GitHub Developer Analytics · Đối chiếu số liệu với các CSV audit trước khi nộp.")
