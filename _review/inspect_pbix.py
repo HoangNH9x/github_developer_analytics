@@ -51,9 +51,9 @@ def summarize_pbix(path: Path) -> dict:
             return result
         result["layout_found"] = True
         raw_layout = zf.read(layout_name)
-        if raw_layout.startswith((b"\\xff\\xfe", b"\\xfe\\xff")):
+        if raw_layout[:2] == bytes([0xff, 0xfe]) or raw_layout[:2] == bytes([0xfe, 0xff]):
             decoded_layout = raw_layout.decode("utf-16")
-        elif b"\\x00" in raw_layout[:80]:
+        elif len(raw_layout) > 1 and raw_layout[0] == ord("{") and raw_layout[1] == 0:
             decoded_layout = raw_layout.decode("utf-16-le")
         else:
             try:
@@ -61,7 +61,7 @@ def summarize_pbix(path: Path) -> dict:
             except UnicodeDecodeError:
                 decoded_layout = raw_layout.decode("cp1252")
         try:
-            layout = json.loads(decoded_layout.lstrip("\\ufeff\\x00\\u200b"))
+            layout = json.loads(decoded_layout.lstrip(chr(0xfeff) + chr(0x00) + chr(0x200b)))
         except Exception as exc:
             print("LAYOUT_DIAGNOSTIC", json.dumps({
                 "member": layout_name,
