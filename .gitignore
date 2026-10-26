@@ -23,3 +23,15 @@ data/interim/
 
 # Local crawl logs
 *.log
+
+# Local processed datasets; publish approved app copies only under app_data/
+data/processed/canonical/
+data/processed/canonical_smoke_test_*/
+
+# Temporary smoke-test seed files
+smoke_test_seed.csv
+smoke_test_3_seed.csv
+
+# Local archive and generated Python package metadata
+Final_processed_dataset.zip
+*.egg-info/
