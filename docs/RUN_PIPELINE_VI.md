@@ -85,7 +85,7 @@ Lưu ý:
 - Không chọn nhiều repository từ cùng owner trong phần global discovery; giới hạn số repo mỗi quốc gia giúp giảm tình trạng một owner hoặc một quốc gia chi phối mẫu.
 - Không đặt `--limit-repos` quá cao cho seed gốc khi chưa kiểm tra thời gian và độ phủ.
 
-Sau khi mẫu nhỏ hoàn tất, kiểm tra số repo, số record, trạng thái và coverage quốc gia. Chỉ tăng số lượng khi cần đạt mục tiêu tối thiểu 100.000 record tổng mà vẫn giữ được so sánh Việt Nam / quốc tế có ý nghĩa.
+Sau khi mẫu hoàn tất, kiểm tra số repo, số record, trạng thái và coverage quốc gia. Chỉ tăng mẫu khi audit cho thấy thiếu nhóm quốc gia quan trọng hoặc coverage chưa đủ để trả lời câu hỏi nghiên cứu; không cần đạt một ngưỡng record cố định nếu chất lượng và phạm vi mẫu đã đáp ứng yêu cầu bài tập.
 
 ## 5. Làm mới dữ liệu
 
