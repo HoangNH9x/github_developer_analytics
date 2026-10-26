@@ -142,8 +142,8 @@ if not metrics.empty:
     if start_values and end_values:
         st.caption(f"Khoảng nghiên cứu: {min(start_values)} đến {max(end_values)} · Stars/Forks là snapshot tại thời điểm crawl.")
 
-tab_overview, tab_vietnam, tab_trends, tab_repositories, tab_developers, tab_quality, tab_insights = st.tabs(
-    ["Tổng quan", "Việt Nam & quốc tế", "Xu hướng thời gian", "Repository Explorer", "Developers", "Chất lượng dữ liệu", "Insights"]
+tab_overview, tab_vietnam, tab_trends, tab_repositories, tab_developers, tab_quality, tab_insights, tab_methodology = st.tabs(
+    ["Tổng quan", "Việt Nam & quốc tế", "Xu hướng thời gian", "Repository Explorer", "Developers", "Chất lượng dữ liệu", "Insights", "Nguồn dữ liệu & phương pháp"]
 )
 
 with tab_overview:
@@ -471,6 +471,159 @@ with tab_insights:
                         peaks.append(f"{label}: **{peak_month}** ({int(values.loc[peak_month]):,})")
             if peaks:
                 st.markdown("**Insight 3 — Đỉnh hoạt động theo tháng:** " + " · ".join(peaks) + ". Tháng cuối trong cửa sổ nghiên cứu chỉ đầy đủ đến 20/10/2026.")
+
+with tab_methodology:
+    st.subheader("Nguồn dữ liệu, phương pháp thu thập và kết quả")
+    st.markdown(
+        "Trang này tổng hợp nội dung phục vụ vấn đáp: **Giai đoạn 1 - nguồn dữ liệu**, "
+        "**phần bổ sung - triển khai code thu thập**, và **Giai đoạn 2 - kết quả dữ liệu**."
+    )
+
+    st.markdown("### 1. Nguồn dữ liệu - Giai đoạn 1")
+    st.write(
+        "Nguồn dữ liệu là dữ liệu công khai từ GitHub REST API, không sử dụng bộ dữ liệu Kaggle. "
+        "Mẫu gồm repository công khai được chọn từ seed ban đầu, repository phát hiện qua tìm kiếm owner quốc tế "
+        "và repository thuộc owner có public profile location được phân giải là Việt Nam."
+    )
+    source_rows = [
+        {
+            "Dữ liệu": "Repository metadata",
+            "Endpoint chính": "GET /repos/{owner}/{repo}",
+            "Thông tin": "repository_id, tên, owner, ngôn ngữ, Stars, Forks, ngày tạo/cập nhật",
+        },
+        {
+            "Dữ liệu": "Owner profile",
+            "Endpoint chính": "GET /users/{username} hoặc GET /orgs/{org}",
+            "Thông tin": "login, type, location công khai tự khai báo",
+        },
+        {
+            "Dữ liệu": "Commits",
+            "Endpoint chính": "GET /repos/{owner}/{repo}/commits",
+            "Thông tin": "commit SHA, ngày commit, contributor quan sát được; lọc since/until",
+        },
+        {
+            "Dữ liệu": "Issues và Pull Requests",
+            "Endpoint chính": "GET /repos/{owner}/{repo}/issues",
+            "Thông tin": "một luồng phân trang; tách PR bằng trường pull_request rồi lọc created_at",
+        },
+        {
+            "Dữ liệu": "Tìm mẫu",
+            "Endpoint chính": "GET /search/repositories, GET /search/users",
+            "Thông tin": "chọn candidate repository và owner; xác minh quốc gia bằng profile",
+        },
+    ]
+    st.dataframe(pd.DataFrame(source_rows), use_container_width=True, hide_index=True)
+    st.caption(
+        "Khoảng hoạt động: 2020-01-01 đến 2026-10-20. Quốc gia owner được suy ra từ location công khai "
+        "tự khai báo; đây không phải xác minh độc lập về nơi cư trú."
+    )
+
+    st.markdown("### 2. Triển khai code thu thập - phần bổ sung")
+    st.write(
+        "run_pipeline.py là entry point. Package src/github_analytics/ chịu trách nhiệm cấu hình, gọi GitHub API, "
+        "phân giải owner-country, thu thập theo từng repository, chuẩn hóa record, khử trùng, tạo checkpoint "
+        "và xuất các bảng processed. check_github_connection.py kiểm tra token local mà không in token ra màn hình."
+    )
+    code_map = pd.DataFrame([
+        {"File / module": "run_pipeline.py", "Vai trò": "Điểm chạy chính, nhận tham số command line."},
+        {"File / module": "src/github_analytics/config.py", "Vai trò": "Khoảng nghiên cứu và cấu hình môi trường."},
+        {"File / module": "src/github_analytics/github_api.py", "Vai trò": "GitHub REST API, phân trang Link header, throttling và retry."},
+        {"File / module": "src/github_analytics/country.py", "Vai trò": "Chuẩn hóa location công khai thành owner-country; giữ Unknown nếu không chắc chắn."},
+        {"File / module": "src/github_analytics/pipeline.py", "Vai trò": "Điều phối repository, checkpoint, xử lý dữ liệu, audit và xuất CSV."},
+        {"File / module": "app/streamlit_app.py", "Vai trò": "Đọc processed CSV và trình bày dashboard, bộ lọc, kiểm định, insights."},
+    ])
+    st.dataframe(code_map, use_container_width=True, hide_index=True)
+    st.markdown("**Các bước chạy tại máy thu thập**")
+    st.code(
+        "python check_github_connection.py\n"
+        "python run_pipeline.py --seed .\\smoke_test_3_seed.csv --limit-repos 3\n"
+        "python run_pipeline.py --seed .\\smoke_test_3_seed.csv --limit-repos 3 "
+        "--discover-global --global-repo-limit 5 --global-per-country 3 "
+        "--discover-vietnam --vn-owner-limit 5 --vn-repos-per-owner 1",
+        language="powershell",
+    )
+    st.caption(
+        "Token GitHub chỉ dùng local trong file .env; không đưa .env, token hoặc raw event data vào repo deploy. "
+        "Checkpoint giúp tiếp tục và tránh crawl lại metric đã hoàn tất cùng khoảng ngày."
+    )
+
+    st.markdown("### 3. Mô hình dữ liệu - Repository là bảng cha")
+    st.markdown(
+        """
+        **DimRepository / repository_country_metrics** là cấp cha: đúng một dòng cho mỗi repository_id.
+
+        - **FactCommits**: nhiều commit thuộc một repository, khóa sự kiện commit_sha.
+        - **FactIssues**: nhiều issue thuộc một repository, khóa sự kiện issue_id.
+        - **FactPullRequests**: nhiều PR thuộc một repository, khóa sự kiện pr_id.
+
+        Ba bảng con nối về repository cha bằng repository_id theo quan hệ 1:N. **Không JOIN trực tiếp**
+        Commits × Issues × Pull Requests trước khi tổng hợp, vì sẽ nhân bản sự kiện. Stars/Forks là snapshot
+        lúc crawl; Commits/Issues/PRs là số sự kiện trong cửa sổ nghiên cứu.
+        """
+    )
+    st.code(
+        "DimRepository (1 row / repository_id)\n"
+        "  ├── FactCommits       (many rows / repository_id)\n"
+        "  ├── FactIssues        (many rows / repository_id)\n"
+        "  └── FactPullRequests  (many rows / repository_id)",
+        language="text",
+    )
+
+    st.markdown("### 4. Kết quả dữ liệu - Giai đoạn 2")
+    if not metrics.empty:
+        total_repos = metrics["repository_id"].nunique() if "repository_id" in metrics else len(metrics)
+        total_commits = complete_metric_total(metrics, "commits_count_window", "commits_status")
+        total_issues = complete_metric_total(metrics, "issues_created_count_window", "issues_status")
+        total_prs = complete_metric_total(metrics, "prs_created_count_window", "prs_status")
+        known_country = metrics["owner_country"].notna().sum() if "owner_country" in metrics else 0
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Repositories", f"{int(total_repos):,}")
+        m2.metric("Commits", f"{int(total_commits):,}")
+        m3.metric("Issues", f"{int(total_issues):,}")
+        m4.metric("Pull Requests", f"{int(total_prs):,}")
+        m5.metric("Owner-country nhận diện", f"{int(known_country)}/{int(total_repos)}")
+        st.metric("Tổng hoạt động được xác nhận", f"{int(total_commits + total_issues + total_prs):,}")
+        if "sample_source" in metrics:
+            src = metrics.groupby("sample_source", dropna=False).agg(
+                repositories=("repository_id", "nunique")
+            ).reset_index()
+            st.markdown("**Thành phần mẫu theo nguồn**")
+            st.dataframe(src, use_container_width=True, hide_index=True)
+        country_chart = metrics.assign(
+            country_group=metrics["owner_country"].fillna("Unknown / unresolved")
+        ).groupby("country_group", as_index=False).agg(
+            repositories=("repository_id", "nunique")
+        ).sort_values("repositories", ascending=False)
+        fig = px.bar(
+            country_chart,
+            x="country_group",
+            y="repositories",
+            title="Số repository theo quốc gia owner",
+            labels={"country_group": "Quốc gia owner", "repositories": "Repositories"},
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            "Kết quả là mẫu có chủ đích, không phải mẫu ngẫu nhiên đại diện toàn GitHub. "
+            "Unknown được giữ riêng và không được hiểu là quốc gia khác."
+        )
+    else:
+        st.info("Chưa có repository_country_metrics.csv để hiển thị kết quả thực tế.")
+
+    st.markdown("### 5. File đầu ra và giới hạn diễn giải")
+    output_rows = [
+        {"File": "repository_country_metrics.csv", "Ý nghĩa": "Một dòng/repository; bảng summary cha."},
+        {"File": "country_repository_comparison.csv", "Ý nghĩa": "Tổng hợp theo country owner."},
+        {"File": "vietnam_vs_other_countries_comparison.csv", "Ý nghĩa": "So sánh Vietnam, Other recognized, Unknown."},
+        {"File": "monthly_activity.csv", "Ý nghĩa": "Xu hướng theo tháng với coverage metric."},
+        {"File": "developer_activity_summary.csv", "Ý nghĩa": "Contributor login quan sát được từ sự kiện thu thập."},
+        {"File": "data_quality_report.csv", "Ý nghĩa": "Số dòng, ID duy nhất, trạng thái metric và chất lượng."},
+        {"File": "deduplication_audit.csv / collection_errors.csv", "Ý nghĩa": "Bản ghi trùng và repository có lỗi/partial."},
+    ]
+    st.dataframe(pd.DataFrame(output_rows), use_container_width=True, hide_index=True)
+    st.warning(
+        "Giới hạn: mẫu chọn có chủ đích; location owner tự khai báo; Stars/Forks là snapshot; "
+        "các kết quả chỉ mô tả mẫu đã thu thập. Metric PARTIAL/ERROR/NOT_RUN không được diễn giải thành 0."
+    )
 
 st.divider()
 st.caption(
