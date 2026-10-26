@@ -1,0 +1,5 @@
+﻿table_name,key,rows_before,rows_after,duplicates_removed
+commits,commit_sha,46811,46811,0
+issues,issue_id,18762,18762,0
+pull_requests,pr_id,32415,32415,0
+owner_profiles,owner_login,47,47,0

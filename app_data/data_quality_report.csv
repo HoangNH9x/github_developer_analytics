@@ -1,0 +1,17 @@
+﻿table_name,check_name,observed_value,status,details,checked_at
+repository_country_metrics,row_count,47,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,unique_repository_id,47,PASS,,2026-10-26T04:10:03+00:00
+repository_country_metrics,owner_country_recognized,45,INFO,"Location công khai tự khai báo, chưa xác minh độc lập.",2026-10-26T04:10:03+00:00
+repository_country_metrics,commits_status_COMPLETE,43,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,commits_status_ZERO_CONFIRMED,4,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,issues_status_COMPLETE,38,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,issues_status_ZERO_CONFIRMED,9,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,prs_status_COMPLETE,41,INFO,,2026-10-26T04:10:03+00:00
+repository_country_metrics,prs_status_ZERO_CONFIRMED,6,INFO,,2026-10-26T04:10:03+00:00
+commits,unique_commit_sha,46811,PASS,,2026-10-26T04:10:03+00:00
+issues,unique_issue_id,18762,PASS,,2026-10-26T04:10:03+00:00
+pull_requests,unique_pr_id,32415,PASS,,2026-10-26T04:10:03+00:00
+commits,duplicates_removed,0,INFO,key=commit_sha; rows_before=46811; rows_after=46811,2026-10-26T04:10:03+00:00
+issues,duplicates_removed,0,INFO,key=issue_id; rows_before=18762; rows_after=18762,2026-10-26T04:10:03+00:00
+pull_requests,duplicates_removed,0,INFO,key=pr_id; rows_before=32415; rows_after=32415,2026-10-26T04:10:03+00:00
+owner_profiles,duplicates_removed,0,INFO,key=owner_login; rows_before=47; rows_after=47,2026-10-26T04:10:03+00:00
