@@ -39,7 +39,7 @@
 - Thu thập counts/records Commits, Issues (không gồm PR), Pull Requests theo khoảng ngày.
 - Lưu nguyên trạng phản hồi/record vào raw CSV hoặc JSONL; checkpoint để tiếp tục sau lỗi.
 - Ghi `sample_source`, `collected_at`, `study_start`, `study_end`, `collection_status` và `collection_method`.
-- Đặt mục tiêu tối thiểu 100.000 record tổng trên các nhóm dữ liệu nếu API và giới hạn truy cập cho phép; công bố số liệu thực tế sau crawl, không cam kết trước khi chạy.
+- Không xem 100.000 record là điều kiện bắt buộc. Chọn quy mô mẫu theo độ phủ quốc gia, tỷ lệ metric hoàn chỉnh, tính đa dạng của repository và thời gian còn lại; công bố đúng số liệu thực tế sau crawl, không tăng mẫu chỉ để đạt một con số.
 
 **Đầu ra:** raw repositories, commits, issues, pull requests, owner profiles và checkpoint/audit.
 
