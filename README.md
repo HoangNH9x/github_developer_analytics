@@ -7,6 +7,7 @@ Phân tích hoạt động repository GitHub, xu hướng Commits / Issues / Pul
 ## Trạng thái hiện tại
 
 - [Kế hoạch làm lại Giai đoạn 1 → Final](docs/REBUILD_PLAN_VI.md)
+- [Tài liệu đặc tả Giai đoạn 1 → Giai đoạn 2](docs/SPECIFICATION_GD1_GD2_VI.md)
 - [Data Dictionary](docs/DATA_DICTIONARY_VI.md)
 - [Thiết kế GitHub API crawl](docs/API_CRAWL_DESIGN_VI.md)
 - [Bản đồ file cũ](docs/LEGACY_FILE_MAP_VI.md)
