@@ -1,0 +1,46 @@
+name: Package Python Source for Submission
+
+on:
+  push:
+    branches: [rebuild-stage1-final]
+    paths:
+      - ".github/workflows/package-python-source.yml"
+      - "run_pipeline.py"
+      - "check_github_connection.py"
+      - "src/**"
+      - "app/**"
+      - "tests/**"
+      - "docs/**"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - ".env.example"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source_submission
+          cp run_pipeline.py check_github_connection.py requirements.txt pyproject.toml README.md .env.example source_submission/
+          cp -R src app tests docs source_submission/
+          find source_submission -type d \( -name __pycache__ -o -name .pytest_cache -o -name .venv \) -prune -exec rm -rf {} +
+          find source_submission -type f \( -name '*.pyc' -o -name '.env' \) -delete
+          cd source_submission
+          zip -r ../Python_Source_Code_GitHub_Developer_Analytics.zip .
+      - name: Upload source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-source-code-submission
+          path: Python_Source_Code_GitHub_Developer_Analytics.zip
+          if-no-files-found: error
+          retention-days: 7
