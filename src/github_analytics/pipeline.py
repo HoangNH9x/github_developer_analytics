@@ -218,9 +218,15 @@ def discover_global_repositories(
 
 
 def discover_vietnam_repositories(
-    client: GitHubClient, owner_limit: int, repos_per_owner: int
+    client: GitHubClient,
+    owner_limit: int,
+    repos_per_owner: int,
+    excluded_full_names: set[str] | None = None,
+    excluded_owners: set[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Opt-in discovery; public location must resolve to Vietnam before a repository is included."""
+    """Discover Vietnam-owner repositories, excluding repositories/owners already in the dataset."""
+    excluded_names = {name.lower() for name in (excluded_full_names or set())}
+    excluded_owner_logins = {name.lower() for name in (excluded_owners or set())}
     candidate_queries = [
         "location:Vietnam type:user",
         "location:Hanoi type:user",
@@ -238,7 +244,7 @@ def discover_vietnam_repositories(
                 continue
             for item in payload.get("items", []):
                 login = item.get("login")
-                if login:
+                if login and str(login).lower() not in excluded_owner_logins:
                     owners[str(login).lower()] = item
         except Exception as exc:
             print(f"[WARN] Search Vietnam owners query failed ({query}): {exc}", file=sys.stderr)
@@ -278,6 +284,10 @@ def discover_vietnam_repositories(
             full_name = repo.get("full_name")
             repo_id = repo.get("id")
             if not full_name or not repo_id:
+                continue
+            if str(full_name).lower() in excluded_names:
+                continue
+            if login.lower() in excluded_owner_logins:
                 continue
             repositories[str(full_name).lower()] = {
                 "repository_id": repo_id,
@@ -832,9 +842,31 @@ def run(args: argparse.Namespace) -> None:
         requests_per_minute=settings.requests_per_minute,
     )
 
+    # Build exclusion sets from the seed, existing metadata, processed summary and checkpoint.
+    # This allows later incremental runs to add new repositories instead of selecting old ones again.
+    known_names = set(seed["full_name"].astype(str).str.lower())
+    known_owners = set(seed["full_name"].astype(str).str.split("/").str[0].str.lower())
+
+    existing_frames = [
+        read_csv_if_exists(CANONICAL_RAW / "repositories.csv"),
+        read_csv_if_exists(CHECKPOINT_PATH),
+        read_csv_if_exists(CANONICAL_PROCESSED / "repository_country_metrics.csv"),
+        read_csv_if_exists(CANONICAL_RAW / "owner_profiles.csv"),
+    ]
+    for frame in existing_frames:
+        if frame.empty:
+            continue
+        if "full_name" in frame.columns:
+            names = frame["full_name"].dropna().astype(str).str.strip().str.lower()
+            known_names.update(name for name in names if "/" in name)
+            known_owners.update(name.split("/", 1)[0] for name in names if "/" in name)
+        if "owner_login" in frame.columns:
+            owners = frame["owner_login"].dropna().astype(str).str.strip().str.lower()
+            known_owners.update(owner for owner in owners if owner)
+
     if args.discover_global:
-        excluded_names = set(seed["full_name"].astype(str).str.lower())
-        excluded_owners = set(seed["full_name"].astype(str).str.split("/").str[0].str.lower())
+        excluded_names = set(known_names)
+        excluded_owners = set(known_owners)
         global_rows = discover_global_repositories(
             client,
             args.global_repo_limit,
@@ -852,7 +884,13 @@ def run(args: argparse.Namespace) -> None:
 
     if args.discover_vietnam:
         print("[INFO] Discovering public GitHub owners whose profile location resolves to Vietnam...")
-        extra_rows = discover_vietnam_repositories(client, args.vn_owner_limit, args.vn_repos_per_owner)
+        extra_rows = discover_vietnam_repositories(
+            client,
+            args.vn_owner_limit,
+            args.vn_repos_per_owner,
+            excluded_full_names=known_names,
+            excluded_owners=known_owners,
+        )
         if extra_rows:
             extra = pd.DataFrame(extra_rows)
             extra["sample_source"] = "vietnam_owner_discovery"
