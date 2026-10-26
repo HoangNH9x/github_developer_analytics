@@ -132,8 +132,8 @@ if not metrics.empty:
     if start_values and end_values:
         st.caption(f"Khoảng nghiên cứu: {min(start_values)} đến {max(end_values)} · Stars/Forks là snapshot tại thời điểm crawl.")
 
-tab_overview, tab_vietnam, tab_trends, tab_repositories, tab_developers, tab_quality = st.tabs(
-    ["Tổng quan", "Việt Nam & quốc tế", "Xu hướng thời gian", "Repository Explorer", "Developers", "Chất lượng dữ liệu"]
+tab_overview, tab_vietnam, tab_trends, tab_repositories, tab_developers, tab_quality, tab_insights = st.tabs(
+    ["Tổng quan", "Việt Nam & quốc tế", "Xu hướng thời gian", "Repository Explorer", "Developers", "Chất lượng dữ liệu", "Insights"]
 )
 
 with tab_overview:
@@ -299,8 +299,14 @@ with tab_developers:
     if developers.empty:
         st.info("Chưa có developer_activity_summary.csv hoặc chưa thu thập được contributor có login.")
     else:
+        include_bots = st.checkbox("Bao gồm tài khoản bot trong leaderboard", value=False)
+        developer_view = developers.copy()
+        if not include_bots and "developer_login" in developer_view:
+            bot_mask = developer_view["developer_login"].astype(str).str.lower().str.contains(r"\[bot\]|bot$", regex=True)
+            developer_view = developer_view[~bot_mask]
         top_n = st.slider("Số contributor hiển thị", min_value=5, max_value=50, value=20, step=5)
-        st.dataframe(developers.head(top_n), use_container_width=True, hide_index=True)
+        st.caption("Bot được tách khỏi leaderboard mặc định; bật ô trên nếu muốn xem cả bot.")
+        st.dataframe(developer_view.head(top_n), use_container_width=True, hide_index=True)
 
 with tab_quality:
     st.subheader("Data Quality & Crawl Coverage")
@@ -328,6 +334,103 @@ with tab_quality:
                 counts = metrics[col].fillna("NOT_RUN").value_counts().rename_axis("status").reset_index(name="repositories")
                 fig = px.bar(counts, x="status", y="repositories", title=col)
                 st.plotly_chart(fig, use_container_width=True)
+
+with tab_insights:
+    st.subheader("Ba insights được tính từ toàn bộ dataset")
+    st.caption("Các số liệu bên dưới sử dụng repository_country_metrics.csv và monthly_activity.csv trong bộ processed đang nạp. Đây là mô tả của mẫu đã chọn, không phải kết luận đại diện cho toàn GitHub.")
+
+    if metrics.empty:
+        st.info("Chưa có repository metrics canonical để tính insights.")
+    else:
+        analysis = metrics.copy()
+        metric_columns = [
+            "commits_count_window",
+            "issues_created_count_window",
+            "prs_created_count_window",
+        ]
+        status_columns = ["commits_status", "issues_status", "prs_status"]
+        for col in metric_columns:
+            if col not in analysis:
+                analysis[col] = pd.NA
+            analysis[col] = numeric(analysis[col])
+
+        valid_all = pd.Series(True, index=analysis.index)
+        for col in status_columns:
+            if col not in analysis:
+                valid_all = valid_all & False
+            else:
+                valid_all = valid_all & analysis[col].isin(["COMPLETE", "ZERO_CONFIRMED"])
+        analysis["activity_total_confirmed"] = analysis[metric_columns].sum(axis=1, min_count=3).where(valid_all)
+        confirmed = analysis[analysis["activity_total_confirmed"].notna()].copy()
+        event_total = numeric(confirmed["activity_total_confirmed"]).sum()
+        top_repo = confirmed.sort_values("activity_total_confirmed", ascending=False).head(1)
+
+        recognized_mask = analysis["owner_country"].notna() if "owner_country" in analysis else pd.Series(False, index=analysis.index)
+        unknown_frame = confirmed[~recognized_mask.loc[confirmed.index]]
+        unknown_events = numeric(unknown_frame["activity_total_confirmed"]).sum()
+        unknown_share = (unknown_events / event_total * 100) if event_total else 0
+        recognized_repos = int(recognized_mask.sum())
+        recognized_share = (recognized_repos / analysis["repository_id"].nunique() * 100) if "repository_id" in analysis and analysis["repository_id"].nunique() else 0
+
+        vietnam_frame = confirmed[confirmed["owner_country"].eq("Vietnam")] if "owner_country" in confirmed else confirmed.iloc[0:0]
+        other_frame = confirmed[confirmed["owner_country"].notna() & confirmed["owner_country"].ne("Vietnam")] if "owner_country" in confirmed else confirmed.iloc[0:0]
+        vn_avg = numeric(vietnam_frame["activity_total_confirmed"]).mean() if not vietnam_frame.empty else None
+        other_avg = numeric(other_frame["activity_total_confirmed"]).mean() if not other_frame.empty else None
+
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Repositories (all metrics confirmed)", f"{len(confirmed):,}")
+        k2.metric("Activity records confirmed", f"{int(event_total):,}")
+        k3.metric("Owner-country recognized", f"{recognized_repos:,}", f"{recognized_share:.1f}%")
+        k4.metric("Unknown-group activity share", f"{unknown_share:.1f}%")
+
+        if not top_repo.empty:
+            top_row = top_repo.iloc[0]
+            top_share = (float(top_row["activity_total_confirmed"]) / event_total * 100) if event_total else 0
+            st.markdown(
+                f"**Insight 1 — Tập trung hoạt động:** {top_row.get('full_name', 'Unknown repo')} có "
+                f"**{int(top_row['activity_total_confirmed']):,}** sự kiện, tương đương **{top_share:.2f}%** "
+                "tổng của những repository có đủ trạng thái xác nhận. Cần hiển thị top repo cùng phân bố, tránh để một repo chi phối kết luận."
+            )
+
+        if vn_avg is not None and other_avg is not None:
+            ratio = other_avg / vn_avg if vn_avg else None
+            ratio_text = f"{ratio:.2f} lần" if ratio is not None else "không tính được vì mẫu Việt Nam có trung bình 0"
+            st.markdown(
+                f"**Insight 2 — Vietnam và quốc tế đã nhận diện:** trung bình hoạt động/repository là "
+                f"**{vn_avg:,.1f}** ở Việt Nam (n={len(vietnam_frame)}) và **{other_avg:,.1f}** ở nhóm "
+                f"quốc gia khác đã nhận diện (n={len(other_frame)}), chênh lệch {ratio_text}. "
+                "Đây là khác biệt mô tả trong mẫu có chủ đích, không phải kết luận về năng suất quốc gia."
+            )
+            avg_chart = pd.DataFrame({
+                "comparison_group": ["Vietnam", "Other recognized countries"],
+                "average_activity_per_repo": [vn_avg, other_avg],
+                "repositories": [len(vietnam_frame), len(other_frame)],
+            })
+            fig = px.bar(
+                avg_chart,
+                x="comparison_group",
+                y="average_activity_per_repo",
+                title="Trung bình hoạt động / repository (Unknown được loại khỏi phép so sánh)",
+                text="repositories",
+                labels={"comparison_group": "Nhóm owner-country", "average_activity_per_repo": "Sự kiện trung bình / repo", "repositories": "Số repository"},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        if not monthly.empty:
+            peak_specs = [
+                ("commits_count_complete", "Commits"),
+                ("issues_count_complete", "Issues"),
+                ("prs_count_complete", "Pull Requests"),
+            ]
+            peaks = []
+            for col, label in peak_specs:
+                if col in monthly and "activity_month" in monthly:
+                    values = monthly.groupby("activity_month")[col].sum()
+                    if not values.empty:
+                        peak_month = values.idxmax()
+                        peaks.append(f"{label}: **{peak_month}** ({int(values.loc[peak_month]):,})")
+            if peaks:
+                st.markdown("**Insight 3 — Đỉnh hoạt động theo tháng:** " + " · ".join(peaks) + ". Tháng cuối trong cửa sổ nghiên cứu chỉ đầy đủ đến 20/10/2026.")
 
 st.divider()
 st.caption(
