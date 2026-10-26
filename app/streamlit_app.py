@@ -2,13 +2,22 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import os
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "data" / "processed" / "canonical"
+# Local development uses canonical pipeline outputs. Streamlit Cloud can use the
+# published, processed-only app_data folder (raw events and tokens stay out of Git).
+LOCAL_DATA_DIR = ROOT / "data" / "processed" / "canonical"
+PUBLISHED_DATA_DIR = ROOT / "app_data"
+DATA_DIR = (
+    Path(os.environ["GDA_DATA_DIR"]).expanduser()
+    if os.environ.get("GDA_DATA_DIR")
+    else (LOCAL_DATA_DIR if LOCAL_DATA_DIR.is_dir() else PUBLISHED_DATA_DIR)
+)
 
 st.set_page_config(
     page_title="GitHub Developer Analytics",
@@ -78,6 +87,7 @@ collection_errors = load_csv("collection_errors.csv")
 
 st.title("GitHub Developer Analytics")
 st.caption("Phân tích hoạt động repository · So sánh Việt Nam và quốc tế · Theo dõi chất lượng dữ liệu")
+st.caption(f"Nguồn dữ liệu đang đọc: `{DATA_DIR}`")
 
 with st.sidebar:
     st.header("Bộ lọc")
@@ -292,6 +302,13 @@ with tab_repositories:
         ]
         columns = [col for col in columns if col in explorer.columns]
         st.dataframe(explorer[columns], use_container_width=True, hide_index=True, height=520)
+        export_csv = explorer[columns].to_csv(index=False).encode("utf-8-sig")
+        st.download_button(
+            "Tải danh sách repository đã lọc (CSV)",
+            data=export_csv,
+            file_name="repository_explorer_filtered.csv",
+            mime="text/csv",
+        )
 
 with tab_developers:
     st.subheader("Contributor activity")
@@ -334,6 +351,29 @@ with tab_quality:
                 counts = metrics[col].fillna("NOT_RUN").value_counts().rename_axis("status").reset_index(name="repositories")
                 fig = px.bar(counts, x="status", y="repositories", title=col)
                 st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Tải các bảng processed")
+    st.caption("Chỉ xuất các bảng đã tổng hợp/audit; không tải token hoặc raw event records từ giao diện.")
+    export_tables = {
+        "repository_country_metrics.csv": metrics,
+        "country_repository_comparison.csv": country_comparison,
+        "vietnam_vs_other_countries_comparison.csv": vn_comparison,
+        "monthly_activity.csv": monthly,
+        "developer_activity_summary.csv": developers,
+        "data_quality_report.csv": quality,
+        "deduplication_audit.csv": dedup_audit,
+        "collection_errors.csv": collection_errors,
+    }
+    existing_tables = [name for name, frame in export_tables.items() if not frame.empty]
+    if existing_tables:
+        selected_export = st.selectbox("Bảng cần tải", existing_tables)
+        frame = export_tables[selected_export]
+        st.download_button(
+            f"Tải {selected_export}",
+            data=frame.to_csv(index=False).encode("utf-8-sig"),
+            file_name=selected_export,
+            mime="text/csv",
+        )
 
 with tab_insights:
     st.subheader("Ba insights được tính từ toàn bộ dataset")
