@@ -17,6 +17,8 @@ on:
       - "pyproject.toml"
       - ".env.example"
       - "README.md"
+      - "smoke_test_3_seed.csv"
+      - "data/raw/repositories_stage2.csv"
   workflow_dispatch:
 
 permissions:
@@ -33,8 +35,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p source_submission
-          cp run_pipeline.py check_github_connection.py requirements.txt pyproject.toml README.md .env.example source_submission/
+          cp run_pipeline.py check_github_connection.py requirements.txt pyproject.toml README.md .env.example smoke_test_3_seed.csv source_submission/
           cp -R src app tests docs Ass_GD1 app_data source_submission/
+          mkdir -p source_submission/data/raw
+          cp data/raw/repositories_stage2.csv source_submission/data/raw/
           find source_submission -type d \( -name __pycache__ -o -name .pytest_cache -o -name .venv \) -prune -exec rm -rf {} +
           find source_submission -type f \( -name '*.pyc' -o -name '.env' \) -delete
           cd source_submission
