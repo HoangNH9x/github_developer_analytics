@@ -9,6 +9,8 @@ on:
       - "check_github_connection.py"
       - "src/**"
       - "app/**"
+      - "app_data/**"
+      - "Ass_GD1/**"
       - "tests/**"
       - "docs/**"
       - "requirements.txt"
@@ -32,7 +34,7 @@ jobs:
           set -euo pipefail
           mkdir -p source_submission
           cp run_pipeline.py check_github_connection.py requirements.txt pyproject.toml README.md .env.example source_submission/
-          cp -R src app tests docs source_submission/
+          cp -R src app tests docs Ass_GD1 app_data source_submission/
           find source_submission -type d \( -name __pycache__ -o -name .pytest_cache -o -name .venv \) -prune -exec rm -rf {} +
           find source_submission -type f \( -name '*.pyc' -o -name '.env' \) -delete
           cd source_submission
