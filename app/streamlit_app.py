@@ -475,8 +475,9 @@ with tab_insights:
 with tab_methodology:
     st.subheader("Nguồn dữ liệu, phương pháp thu thập và kết quả")
     st.markdown(
-        "Trang này tổng hợp nội dung phục vụ vấn đáp: **Giai đoạn 1 - nguồn dữ liệu**, "
-        "**phần bổ sung - triển khai code thu thập**, và **Giai đoạn 2 - kết quả dữ liệu**."
+        "Đây là phần demo chi tiết để giải thích khi vấn đáp. **PDF nộp bài** tập trung đúng 3 mục theo form: "
+        "nguồn dữ liệu GĐ1, cách triển khai thu thập và kết quả GĐ2. Trang này mở rộng phần giải thích pipeline, "
+        "vai trò các module Python, mô hình Repository cha-các bảng con và kết quả dashboard tương tác."
     )
 
     st.markdown("### 1. Nguồn dữ liệu - Giai đoạn 1")
@@ -484,6 +485,11 @@ with tab_methodology:
         "Nguồn dữ liệu là dữ liệu công khai từ GitHub REST API, không sử dụng bộ dữ liệu Kaggle. "
         "Mẫu gồm repository công khai được chọn từ seed ban đầu, repository phát hiện qua tìm kiếm owner quốc tế "
         "và repository thuộc owner có public profile location được phân giải là Việt Nam."
+    )
+    st.info(
+        "Giai đoạn 1 là prototype thu thập/làm sạch với các bảng Repositories, Commits và Issues "
+        "(log dự án ghi nhận quy mô xấp xỉ 10 repositories, 5.000 commits và 4.950 issues). "
+        "Các số này là mốc thử nghiệm ban đầu, không được cộng vào tổng hoạt động Giai đoạn 2 vì mẫu và quy trình khác nhau."
     )
     source_rows = [
         {
@@ -534,6 +540,10 @@ with tab_methodology:
     ])
     st.dataframe(code_map, use_container_width=True, hide_index=True)
     st.markdown("**Các bước chạy tại máy thu thập**")
+    st.caption(
+        "Lệnh dưới đây minh họa lượt thử và mở rộng mẫu incremental. Kết quả tìm candidate phụ thuộc seed/checkpoint "
+        "đã có trên máy và dữ liệu công khai tại thời điểm chạy."
+    )
     st.code(
         "python check_github_connection.py\n"
         "python run_pipeline.py --seed .\\smoke_test_3_seed.csv --limit-repos 3\n"
