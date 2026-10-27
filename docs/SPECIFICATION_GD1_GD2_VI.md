@@ -47,17 +47,18 @@ Giai đoạn 1 ban đầu ghi nhận xấp xỉ 10 repository, 5.000 commit và 
 6. Tổng hợp các bảng repository/country/month/contributor; tạo data-quality report, deduplication audit và collection errors.
 7. Đọc các bảng processed trong Streamlit và Power BI.
 
-### 2.3 Vai trò các file Python chính
+### 2.3 Cách chạy code và nơi xem giải thích chi tiết
 
-| File / module | Trách nhiệm |
-|---|---|
-| run_pipeline.py | Entry point; nhận tham số command line và khởi chạy pipeline |
-| check_github_connection.py | Kiểm tra token local và kết nối API mà không hiển thị token |
-| src/github_analytics/config.py | Cấu hình khoảng thời gian, token và các tham số chạy |
-| src/github_analytics/github_api.py | Gọi API, phân trang Link header, giới hạn request, retry và thu thập event |
-| src/github_analytics/country.py | Chuẩn hóa location công khai sang owner-country; giữ Unknown khi chưa rõ |
-| src/github_analytics/pipeline.py | Điều phối từng repository, checkpoint, khử trùng, tổng hợp và audit |
-| app/streamlit_app.py | Dashboard tổng quan, so sánh quốc gia, xu hướng, repository explorer, contributors, chất lượng và insights |
+Điểm chạy chính là `run_pipeline.py`; trước khi thu thập, dùng `check_github_connection.py` để xác minh token local mà không in token ra màn hình.
+
+1. Tạo môi trường Python và cài thư viện theo `pyproject.toml` / `requirements.txt`.
+2. Tạo file `.env` từ `.env.example`, đặt `GITHUB_TOKEN` cục bộ và không đưa file này lên GitHub.
+3. Chạy `python check_github_connection.py` để kiểm tra kết nối.
+4. Chạy `python run_pipeline.py --seed .\\smoke_test_3_seed.csv --limit-repos 3` cho lượt thử nhỏ.
+5. Khi mẫu và cấu hình đã được kiểm tra, mới sử dụng các tham số `--discover-global` và `--discover-vietnam` để mở rộng mẫu.
+6. Kiểm tra output trong `data/raw/canonical/` và `data/processed/canonical/`; đọc `data_quality_report.csv`, `deduplication_audit.csv`, và `collection_errors.csv` trước khi phân tích.
+
+Phần giải thích trực quan từng module Python, các bộ lọc và kết quả dashboard được đặt trong Streamlit ở tab **Nguồn dữ liệu & phương pháp**, phù hợp cho phần demo/vấn đáp Giai đoạn 2.
 
 ### 2.4 Cấu hình bảo mật và giới hạn API
 
