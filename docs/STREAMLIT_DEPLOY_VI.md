@@ -13,7 +13,7 @@
    - `deduplication_audit.csv`
    - `collection_errors.csv`
    - `data_quality_report.csv`
-4. Sau khi kiểm tra dữ liệu, commit các CSV processed này lên nhánh triển khai. Thư mục raw canonical và checkpoint được .gitignore vì chúng có thể lớn; **không** commit token hoặc file `.env`.
+4. Bộ CSV processed cho Streamlit đã được publish trong `app_data/` trên nhánh `rebuild-stage1-final`. Thư mục raw canonical và checkpoint không được publish; **không** commit token hoặc file `.env`.
 
 ## Chạy local (dùng dataset Final đã crawl, không crawl lại)
 
@@ -34,27 +34,11 @@ App sẽ ưu tiên đọc `data/processed/canonical/` nếu thư mục này tồ
 
 App có các trang Tổng quan, Việt Nam & quốc tế, Xu hướng thời gian, Repository Explorer, Developers, Chất lượng dữ liệu và Insights. Có thể lọc theo owner-country, language và sample source; tải các bảng processed sau khi lọc.
 
-## Chuẩn bị dữ liệu cho Streamlit Cloud
+## Dữ liệu cho Streamlit Cloud
 
-Streamlit Cloud không nhìn thấy file nằm trên ổ E: của máy cá nhân. Vì vậy, trước khi deploy hãy copy **các CSV processed đã được rà soát** vào thư mục `app_data/` trong repo; app tự dùng thư mục này khi không có `data/processed/canonical/`. Chỉ publish các bảng đã tổng hợp, không publish raw event files, checkpoint hoặc token.
+Bộ processed CSV đã có trong thư mục `app_data/` trên nhánh `rebuild-stage1-final`. Vì vậy bạn không cần copy lại hoặc crawl dữ liệu để deploy. Streamlit Cloud sẽ đọc `app_data/` khi môi trường cloud không có `data/processed/canonical/` local.
 
-Chạy PowerShell từ thư mục gốc:
-
-```powershell
-New-Item -ItemType Directory -Force .\app_data | Out-Null
-Copy-Item .\data\processed\canonical\*.csv .\app_data\
-git status --short
-```
-
-Kiểm tra danh sách file được copy. Nếu đúng, commit riêng các CSV processed cần cho dashboard:
-
-```powershell
-git add app_data
-git commit -m "publish processed dataset for Streamlit Final"
-git push origin rebuild-stage1-final
-```
-
-Không đưa `.env`, token, thư mục `data/raw/canonical/` hay toàn bộ event-level CSV vào commit deploy.
+Nếu sau này cập nhật dataset, hãy chỉ copy những CSV processed đã audit vào `app_data/`, kiểm tra thay đổi rồi commit/push các file đó. Không đưa `.env`, token, thư mục `data/raw/canonical/`, checkpoint hoặc toàn bộ event-level CSV vào commit deploy.
 
 ## Deploy trên Streamlit Community Cloud
 
